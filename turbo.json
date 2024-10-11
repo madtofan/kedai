@@ -11,14 +11,33 @@
         ".env.production",
         ".env"
       ],
-      "env": ["DATABASE_URL"]
-    },
-    "lint": {
-      "outputs": []
+      "env": [
+        "DATABASE_URL",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY"
+      ]
     },
     "dev": {
       "cache": false,
       "persistent": true,
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env.development.local",
+        ".env.local",
+        ".env.development",
+        ".env"
+      ],
+      "env": [
+        "DATABASE_URL",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "CLERK_SECRET_KEY"
+      ]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "db:push": {
+      "outputs": [],
       "inputs": [
         "$TURBO_DEFAULT$",
         ".env.development.local",
