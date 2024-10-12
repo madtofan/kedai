@@ -1,12 +1,9 @@
-import * as React from "react";
+import { useSignIn, useAuth } from "@clerk/clerk-expo";
+import { useRouter } from "expo-router";
 import { View } from "react-native";
-import Animated, {
-  FadeInUp,
-  FadeOutDown,
-  LayoutAnimationConfig,
-} from "react-native-reanimated";
-import { Info } from "~/lib/icons/Info";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import React, { useCallback } from "react";
+import { Input } from "~/components/ui/input";
+import { Text } from "~/components/ui/text";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -16,97 +13,94 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Progress } from "~/components/ui/progress";
-import { Text } from "~/components/ui/text";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { LoaderCircle } from "~/lib/icons/LoaderCircle";
+import { Label } from "~/components/ui/label";
+import { Redirect } from "expo-router";
+import SignInWithOAuth from "~/components/SignInWithOAuth";
 
-const GITHUB_AVATAR_URI =
-  "https://i.pinimg.com/originals/ef/a2/8d/efa28d18a04e7fa40ed49eeb0ab660db.jpg";
+export default function SignInScreen() {
+  const { isSignedIn } = useAuth();
+  const { signIn, setActive, isLoaded } = useSignIn();
+  const router = useRouter();
 
-export default function Screen() {
-  const [progress, setProgress] = React.useState(78);
+  const [emailAddress, setEmailAddress] = React.useState("");
+  const [password, setPassword] = React.useState("");
 
-  function updateProgressValue() {
-    setProgress(Math.floor(Math.random() * 100));
+  const onSignInPress = useCallback(() => {
+    if (!isLoaded) {
+      return;
+    }
+    signIn
+      .create({
+        identifier: emailAddress,
+        password,
+      })
+      .then((signInAttempt) => {
+        if (signInAttempt.status === "complete") {
+          setActive({ session: signInAttempt.createdSessionId }).then(() => {
+            router.replace("/dashboard");
+          });
+        } else {
+          // See https://clerk.com/docs/custom-flows/error-handling
+          // for more info on error handling
+          console.error(JSON.stringify(signInAttempt, null, 2));
+        }
+      })
+      .catch((err) => {
+        console.error(JSON.stringify(err, null, 2));
+      });
+  }, [isLoaded, emailAddress, password]);
+
+  if (isSignedIn) {
+    return <Redirect href="/dashboard" />;
   }
+
   return (
-    <View className="flex-1 justify-center items-center gap-5 p-6 bg-secondary/30">
-      <Card className="w-full max-w-sm p-6 rounded-2xl">
-        <CardHeader className="items-center">
-          <Avatar alt="Rick Sanchez's Avatar" className="w-24 h-24">
-            <AvatarImage source={{ uri: GITHUB_AVATAR_URI }} />
-            <AvatarFallback>
-              <Text>RS</Text>
-            </AvatarFallback>
-          </Avatar>
-          <View className="p-3" />
-          <CardTitle className="pb-2 text-center">Rick Sanchez</CardTitle>
-          <View className="flex-row">
-            <CardDescription className="text-base font-semibold">
-              Scientist
-            </CardDescription>
-            <Tooltip delayDuration={150}>
-              <TooltipTrigger className="px-2 pb-0.5 active:opacity-50">
-                <Info
-                  size={14}
-                  strokeWidth={2.5}
-                  className="w-4 h-4 text-foreground/70"
-                />
-              </TooltipTrigger>
-              <TooltipContent className="py-2 px-4 shadow">
-                <Text className="native:text-lg">Freelance</Text>
-              </TooltipContent>
-            </Tooltip>
-          </View>
+    <View className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-[350px]">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Kedai Login</CardTitle>
+          <CardDescription>
+            <Text>Choose your preferred login method</Text>
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <View className="flex-row justify-around gap-3">
-            <View className="items-center">
-              <Text className="text-sm text-muted-foreground">Dimension</Text>
-              <Text className="text-xl font-semibold">C-137</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-sm text-muted-foreground">Age</Text>
-              <Text className="text-xl font-semibold">70</Text>
-            </View>
-            <View className="items-center">
-              <Text className="text-sm text-muted-foreground">Species</Text>
-              <Text className="text-xl font-semibold">Human</Text>
-            </View>
+        <CardContent className="grid gap-4">
+          <SignInWithOAuth />
+          <Text className="flex text-center flex-shrink px-2 text-xs text-muted-foreground">
+            or continue with
+          </Text>
+          <View className="grid gap-1">
+            <Label>Email</Label>
+            <Input
+              id="email"
+              keyboardType="email-address"
+              placeholder="Email..."
+              value={emailAddress}
+              onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
+            />
+          </View>
+          <View className="grid gap-1 mt-2">
+            <Label>Password</Label>
+            <Input
+              id="password"
+              keyboardType="visible-password"
+              value={password}
+              placeholder="Password..."
+              secureTextEntry={true}
+              onChangeText={(password) => setPassword(password)}
+            />
           </View>
         </CardContent>
-        <CardFooter className="flex-col gap-3 pb-0">
-          <View className="flex-row items-center overflow-hidden">
-            <Text className="text-sm text-muted-foreground">Productivity:</Text>
-            <LayoutAnimationConfig skipEntering>
-              <Animated.View
-                key={progress}
-                entering={FadeInUp}
-                exiting={FadeOutDown}
-                className="w-11 items-center"
-              >
-                <Text className="text-sm font-bold text-sky-600">
-                  {progress}%
-                </Text>
-              </Animated.View>
-            </LayoutAnimationConfig>
-          </View>
-          <Progress
-            value={progress}
-            className="h-2"
-            indicatorClassName="bg-sky-600"
-          />
-          <View />
+        <CardFooter>
           <Button
-            variant="outline"
-            className="shadow shadow-foreground/5"
-            onPress={updateProgressValue}
+            className="w-full mt-4"
+            disabled={!isLoaded}
+            onPress={onSignInPress}
           >
-            <Text>Update</Text>
+            {!isLoaded && (
+              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            <Text>Login with Email</Text>
           </Button>
         </CardFooter>
       </Card>
