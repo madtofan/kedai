@@ -7,8 +7,8 @@ import { TailwindIndicator } from "./_components/ui/tailwind-indicator";
 import { Toaster } from "./_components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "POS API",
-  description: "Created by madtofan",
+  title: "Kedai",
+  description: "Open source Point Of Sale System",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

@@ -31,7 +31,7 @@ export function Providers({ children }: ProvidersProps): ReactNode {
   );
 
   return (
-    <ClerkProvider>
+    <ClerkProvider afterSignOutUrl="/">
       <QueryClientProvider client={queryClient}>
         <TRPCReactProvider>
           <ThemeContext.Provider value={themeProviderValue}>
