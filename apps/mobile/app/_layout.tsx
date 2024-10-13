@@ -3,7 +3,6 @@ import "~/global.css";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Theme, ThemeProvider } from "@react-navigation/native";
 import { Slot, SplashScreen } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import { StatusBar } from "expo-status-bar";
 import * as React from "react";
@@ -13,6 +12,8 @@ import { useColorScheme } from "~/lib/useColorScheme";
 import { PortalHost } from "@rn-primitives/portal";
 import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { useEffect, useState } from "react";
+import { getToken, saveToken } from "~/lib/session-store";
+import { TRPCProvider } from "~/lib/api";
 
 export interface TokenCache {
   getToken: (key: string) => Promise<string | undefined | null>;
@@ -38,28 +39,8 @@ export default function RootLayout() {
   const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
   const tokenCache: TokenCache = {
-    async getToken(key: string) {
-      try {
-        const item = await SecureStore.getItemAsync(key);
-        if (item) {
-          console.log(`${key} was used 🔐 \n`);
-        } else {
-          console.log("No values stored under key: " + key);
-        }
-        return item;
-      } catch (error) {
-        console.error("SecureStore get item error: ", error);
-        await SecureStore.deleteItemAsync(key);
-        return null;
-      }
-    },
-    async saveToken(key: string, value: string) {
-      try {
-        return SecureStore.setItemAsync(key, value);
-      } catch (err) {
-        return;
-      }
-    },
+    getToken,
+    saveToken,
   };
 
   useEffect(() => {
@@ -98,13 +79,15 @@ export default function RootLayout() {
 
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <ClerkLoaded>
-        <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-          <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-          <Slot />
-          <PortalHost />
-        </ThemeProvider>
-      </ClerkLoaded>
+      <TRPCProvider>
+        <ClerkLoaded>
+          <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+            <Slot />
+            <PortalHost />
+          </ThemeProvider>
+        </ClerkLoaded>
+      </TRPCProvider>
     </ClerkProvider>
   );
 }
