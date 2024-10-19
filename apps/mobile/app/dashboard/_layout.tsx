@@ -8,7 +8,6 @@ import {
   DrawerContentScrollView,
   DrawerItem,
   DrawerItemList,
-  DrawerNavigationProp,
 } from "@react-navigation/drawer";
 import { TouchableOpacity, View } from "react-native";
 import { Separator } from "~/components/ui/separator";

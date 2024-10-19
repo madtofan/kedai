@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { siteConfig } from "~/lib/site";
 import { navsConfig } from "~/lib/navs";
 import { cn } from "~/lib/utils";
-import Icons from "~/app/_components/ui/icons";
+import Icons from "~/components/ui/icons";
 
 export default function MainNav() {
   const pathName = usePathname();

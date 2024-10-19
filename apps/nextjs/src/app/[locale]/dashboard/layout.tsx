@@ -1,8 +1,8 @@
 import React from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { navsConfig } from "~/lib/navs";
-import { ScrollArea } from "../_components/ui/scroll-area";
-import { SidebarNav } from "./_components/sidebar-nav";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import SidebarNav from "./_components/sidebar-nav";
 import MainNav from "./_components/main-nav";
 import MobileNav from "./_components/mobile-nav";
 import ModeToggle from "./_components/mode-toggle";

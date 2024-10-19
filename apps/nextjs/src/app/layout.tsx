@@ -1,32 +1,12 @@
+import { type ReactNode } from "react";
 import "~/styles/globals.css";
-import { GeistSans } from "geist/font/sans";
-import { type Metadata } from "next";
-import { Providers } from "./dashboard/_components/providers";
-import { SiteFooter } from "./footer";
-import { TailwindIndicator } from "./_components/ui/tailwind-indicator";
-import { Toaster } from "./_components/ui/toaster";
 
-export const metadata: Metadata = {
-  title: "Kedai",
-  description: "Open source Point Of Sale System",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+type Props = {
+  children: ReactNode;
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <html lang="en" className={`${GeistSans.variable}`}>
-      <body>
-        <Providers>
-          <div className="relative flex min-h-screen flex-col justify-between bg-background">
-            {children}
-            <SiteFooter />
-          </div>
-          <TailwindIndicator />
-          <Toaster />
-        </Providers>
-      </body>
-    </html>
-  );
+// Since we have a `not-found.tsx` page on the root, a layout file
+// is required, even if it's just passing children through.
+export default function RootLayout({ children }: Props) {
+  return children;
 }

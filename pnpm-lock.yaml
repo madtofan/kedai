@@ -19,7 +19,7 @@ importers:
         version: 3.4.13
       turbo:
         specifier: latest
-        version: 2.1.3
+        version: 2.2.0
 
   apps/mobile:
     dependencies:
@@ -165,6 +165,9 @@ importers:
       '@acme/api':
         specifier: workspace:*
         version: link:../../packages/server
+      '@acme/locale':
+        specifier: workspace:*
+        version: link:../../packages/locale
       '@clerk/nextjs':
         specifier: ^5.6.0
         version: 5.7.2(next@14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -172,7 +175,7 @@ importers:
         specifier: ^1.1.1
         version: 1.1.2(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-dropdown-menu':
-        specifier: ^2.1.1
+        specifier: ^2.1.2
         version: 2.1.2(@types/react-dom@18.3.0)(@types/react@18.3.11)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@radix-ui/react-icons':
         specifier: ^1.3.0
@@ -219,6 +222,9 @@ importers:
       next:
         specifier: ^14.2.4
         version: 14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      next-intl:
+        specifier: ^3.21.1
+        version: 3.21.1(next@14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -280,6 +286,21 @@ importers:
       typescript:
         specifier: ^5.5.3
         version: 5.6.2
+
+  packages/locale:
+    devDependencies:
+      '@tolgee/format-icu':
+        specifier: ^5.29.4
+        version: 5.29.4
+      '@tolgee/react':
+        specifier: ^5.29.4
+        version: 5.29.4(react@18.3.1)
+      '@tolgee/web':
+        specifier: ^5.29.4
+        version: 5.29.4
+      next-intl:
+        specifier: ^3.21.1
+        version: 3.21.1(next@14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
 
   packages/server:
     dependencies:
@@ -1612,6 +1633,21 @@ packages:
   '@floating-ui/utils@0.2.8':
     resolution: {integrity: sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig==}
 
+  '@formatjs/ecma402-abstract@2.2.0':
+    resolution: {integrity: sha512-IpM+ev1E4QLtstniOE29W1rqH9eTdx5hQdNL8pzrflMj/gogfaoONZqL83LUeQScHAvyMbpqP5C9MzNf+fFwhQ==}
+
+  '@formatjs/fast-memoize@2.2.1':
+    resolution: {integrity: sha512-XS2RcOSyWxmUB7BUjj3mlPH0exsUzlf6QfhhijgI941WaJhVxXQ6mEWkdUFIdnKi3TuTYxRdelsgv3mjieIGIA==}
+
+  '@formatjs/icu-messageformat-parser@2.7.10':
+    resolution: {integrity: sha512-wlQfqCZ7PURkUNL2+8VTEFavPovtADU/isSKLFvDbdFmV7QPZIYqFMkhklaDYgMyLSBJa/h2MVQ2aFvoEJhxgg==}
+
+  '@formatjs/icu-skeleton-parser@1.8.4':
+    resolution: {integrity: sha512-LMQ1+Wk1QSzU4zpd5aSu7+w5oeYhupRwZnMQckLPRYhSjf2/8JWQ882BauY9NyHxs5igpuQIXZDgfkaH3PoATg==}
+
+  '@formatjs/intl-localematcher@0.5.5':
+    resolution: {integrity: sha512-t5tOGMgZ/i5+ALl2/offNqAQq/lfUnKLEw0mXQI4N4bqpedhrSE+fyKLpwnd22sK0dif6AV+ufQcTsKShB9J1g==}
+
   '@formkit/auto-animate@0.8.2':
     resolution: {integrity: sha512-SwPWfeRa5veb1hOIBMdzI+73te5puUBHmqqaF1Bu7FjvxlYSz/kJcZKSa9Cg60zL0uRNeJL2SbRxV6Jp6Q1nFQ==}
 
@@ -2599,6 +2635,20 @@ packages:
     resolution: {integrity: sha512-YDXp3OORbYR+8HNQx+lf4F73NoiCmCcSvZvgxE29OifmQFk0sBlO26NWLHpcNERo92tVk3w+JQ53/vkcRUY1hA==}
     peerDependencies:
       react: ^18 || ^19
+
+  '@tolgee/core@5.29.4':
+    resolution: {integrity: sha512-dY/m/uOU/JGnT9i0a1LTXOT3H2msB8Pv7B7jVjOnk/2UWjZBDmLC5Mje89lm0aaHGCf2VkazBRrFg5Jh/QoMtA==}
+
+  '@tolgee/format-icu@5.29.4':
+    resolution: {integrity: sha512-4t+nUwu3RLIHrq4BDXq80fVQM09Oh8ef4RvB59x8kFtg7EJWVsS0Cld5oGqrl+kIJXy89SFnEyItqpGUN+aqRQ==}
+
+  '@tolgee/react@5.29.4':
+    resolution: {integrity: sha512-lcxa4ZtkmkDt5/thw6zqnH0QLfTFPibDvhZ6wFfxqDP9DEWDVwPDnugu6+3/qBh7EYH15RdHJIG4sJNTMFB2yA==}
+    peerDependencies:
+      react: ^16.14.0 || ^17.0.1 || ^18.1.0
+
+  '@tolgee/web@5.29.4':
+    resolution: {integrity: sha512-zU8hNfdKykoh3rHonnWwDXzYAt5x4KwDhAFKfbmx7xtQSXoR6pW6+WO3VufTPzuDdaQO5CwMSTU6k60FqSl8kA==}
 
   '@trpc/client@11.0.0-rc.566':
     resolution: {integrity: sha512-49WHcXXzv/EBF1fmuQBX8uea2dbZljx2BfbAVyvjNt+6QIMxpsOPIfVL9MDI3nCK7b1YNOhBBTCTto9Nx92tdw==}
@@ -4398,6 +4448,9 @@ packages:
     resolution: {integrity: sha512-NGnrKwXzSms2qUUih/ILZ5JBqNTSa1+ZmP6flaIp6KmSElgE9qdndzS3cqjrDovwFdmwsGsLdeFgB6suw+1e9g==}
     engines: {node: '>= 0.4'}
 
+  intl-messageformat@10.7.0:
+    resolution: {integrity: sha512-2P06M9jFTqJnEQzE072VGPjbAx6ZG1YysgopAwc8ui0ajSjtwX1MeQ6bXFXIzKcNENJTizKkcJIcZ0zlpl1zSg==}
+
   invariant@2.2.4:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
 
@@ -5191,6 +5244,12 @@ packages:
 
   nested-error-stacks@2.0.1:
     resolution: {integrity: sha512-SrQrok4CATudVzBS7coSz26QRSmlK9TzzoFbeKfcPBUFPjcQM9Rqvr/DlJkOrwI/0KcgvMub1n1g5Jt9EgRn4A==}
+
+  next-intl@3.21.1:
+    resolution: {integrity: sha512-hQm4Wgq5i1lfOHAWmXBVl5d2/XAeddcjsrUmjotXEESzPSvW5j2t0Pr8AV8WorTILgqU748aXuenBhz5P78tdw==}
+    peerDependencies:
+      next: ^10.0.0 || ^11.0.0 || ^12.0.0 || ^13.0.0 || ^14.0.0
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
   next@14.2.14:
     resolution: {integrity: sha512-Q1coZG17MW0Ly5x76shJ4dkC23woLAhhnDnw+DfTc7EpZSGuWrlsZ3bZaO8t6u1Yu8FVfhkqJE+U8GC7E0GLPQ==}
@@ -6479,41 +6538,41 @@ packages:
   tslib@2.7.0:
     resolution: {integrity: sha512-gLXCKdN1/j47AiHiOkJN69hJmcbGTHI0ImLmbYLHykhgeN0jVGola9yVjFgzCUklsZQMW55o+dW7IXv3RCXDzA==}
 
-  turbo-darwin-64@2.1.3:
-    resolution: {integrity: sha512-ouJOm0g0YyoBuhmikEujVCBGo3Zr0lbSOWFIsQtWUTItC88F2w2byhjtsYGPXQwMlTbXwmoBU2lOCfWNkeEwHQ==}
+  turbo-darwin-64@2.2.0:
+    resolution: {integrity: sha512-mJK+7hpvGsxyXfx2UTdewisXGIikRORoj25OKagsNw7dE7D1j0HnfWrjguIshlmFoQu18E5ipbdUAzjHdQGPkg==}
     cpu: [x64]
     os: [darwin]
 
-  turbo-darwin-arm64@2.1.3:
-    resolution: {integrity: sha512-j2FOJsK4LAOtHQlb3Oom0yWB/Vi0nF1ljInr311mVzHoFAJRZtfW2fRvdZRb/lBUwjSp8be58qWHzANIcrA0OA==}
+  turbo-darwin-arm64@2.2.0:
+    resolution: {integrity: sha512-uStU2I1aMSj8/ord3gNXdr/k1Xk+pflfMPS4d/oQUAPld8L9plbQ8JSgoXsFoJYyU9vhTeXkjLkpnQxXoGnb9w==}
     cpu: [arm64]
     os: [darwin]
 
-  turbo-linux-64@2.1.3:
-    resolution: {integrity: sha512-ubRHkI1gSel7H7wsmxKK8C9UlLWqg/2dkCC88LFupaK6TKgvBKqDqA0Z1M9C/escK0Jsle2k0H8bybV9OYIl4Q==}
+  turbo-linux-64@2.2.0:
+    resolution: {integrity: sha512-dVy/hquEDBy7trsSb5TynDGeS2iqcI9QTfC2kLZnsgPo6WWURXESN+AFChGxgZ2yp2CKrj5eZhnHdtRbP0a5EQ==}
     cpu: [x64]
     os: [linux]
 
-  turbo-linux-arm64@2.1.3:
-    resolution: {integrity: sha512-LffUL+e5wv7BtD6DgnM2kKOlDkMo2eRjhbAjVnrCD3wi2ug0tl6NDzajnHHjtaMyOnIf4AvzSKdLWsBxafGBQA==}
+  turbo-linux-arm64@2.2.0:
+    resolution: {integrity: sha512-YuCmCBQsvH8RZGDBqFXOm49UY3mJFRahQ7J8IT4KQX3O8zIPTu84715ILUTznElhlYY7IKoqfenovVzYFzEbMQ==}
     cpu: [arm64]
     os: [linux]
 
   turbo-stream@2.4.0:
     resolution: {integrity: sha512-FHncC10WpBd2eOmGwpmQsWLDoK4cqsA/UT/GqNoaKOQnT8uzhtCbg3EoUDMvqpOSAI0S26mr0rkjzbOO6S3v1g==}
 
-  turbo-windows-64@2.1.3:
-    resolution: {integrity: sha512-S9SvcZZoaq5jKr6kA6eF7/xgQhVn8Vh7PVy5lono9zybvhyL4eY++y2PaLToIgL8G9IcbLmgOC73ExNjFBg9XQ==}
+  turbo-windows-64@2.2.0:
+    resolution: {integrity: sha512-6WegPi7hEbKuQXR/VGJXGO0jV9tm+dyRNH6e3Edb3DMaa8ThnzfjxMmrvQwLbGgMNvjBRBEKAHhOAnE6FXdPew==}
     cpu: [x64]
     os: [win32]
 
-  turbo-windows-arm64@2.1.3:
-    resolution: {integrity: sha512-twlEo8lRrGbrR6T/ZklUIquW3IlFCEtywklgVA81aIrSBm56+GEVpSrHhIlsx1hiYeSNrs+GpDwZGe+V7fvEVQ==}
+  turbo-windows-arm64@2.2.0:
+    resolution: {integrity: sha512-kmk+A3aUy4dWhTVzW1itrWRtIilv4dFNRThfucBNYRL4Huyug+8qdX51iJjKyHMi0x51rcND62lukWWtFZhCSA==}
     cpu: [arm64]
     os: [win32]
 
-  turbo@2.1.3:
-    resolution: {integrity: sha512-lY0yj2GH2a2a3NExZ3rGe+rHUVeFE2aXuRAue57n+08E7Z7N7YCmynju0kPC1grAQzERmoLpKrmzmWd+PNiADw==}
+  turbo@2.2.0:
+    resolution: {integrity: sha512-uyr+tFAKDKWIpihuUVYpEvuzQ3Pc+kICf0fbRzzc/86ram74azvwTXplzRQ+BUv8zTjwIRKNhrH5L4q0rgJyMw==}
     hasBin: true
 
   type-check@0.4.0:
@@ -6659,6 +6718,11 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  use-intl@3.21.1:
+    resolution: {integrity: sha512-52kYgcydYkG9SX0ZZGt7W6WD2Va01hwe15bDgkXuaTdSxrF9fDu6hHTV5DxIuSmSSf/FEcBo/nodpw3ZhY31Lw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0
 
   use-latest-callback@0.2.1:
     resolution: {integrity: sha512-QWlq8Is8BGWBf883QOEQP5HWYX/kMI+JTbJ5rdtvJLmXTIh9XoHIO3PQcmQl8BU44VKxow1kbQUHa6mQSMALDQ==}
@@ -8636,6 +8700,31 @@ snapshots:
 
   '@floating-ui/utils@0.2.8': {}
 
+  '@formatjs/ecma402-abstract@2.2.0':
+    dependencies:
+      '@formatjs/fast-memoize': 2.2.1
+      '@formatjs/intl-localematcher': 0.5.5
+      tslib: 2.7.0
+
+  '@formatjs/fast-memoize@2.2.1':
+    dependencies:
+      tslib: 2.7.0
+
+  '@formatjs/icu-messageformat-parser@2.7.10':
+    dependencies:
+      '@formatjs/ecma402-abstract': 2.2.0
+      '@formatjs/icu-skeleton-parser': 1.8.4
+      tslib: 2.7.0
+
+  '@formatjs/icu-skeleton-parser@1.8.4':
+    dependencies:
+      '@formatjs/ecma402-abstract': 2.2.0
+      tslib: 2.7.0
+
+  '@formatjs/intl-localematcher@0.5.5':
+    dependencies:
+      tslib: 2.7.0
+
   '@formkit/auto-animate@0.8.2': {}
 
   '@graphql-typed-document-node/core@3.2.0(graphql@15.8.0)':
@@ -10010,6 +10099,19 @@ snapshots:
     dependencies:
       '@tanstack/query-core': 5.59.0
       react: 18.3.1
+
+  '@tolgee/core@5.29.4': {}
+
+  '@tolgee/format-icu@5.29.4': {}
+
+  '@tolgee/react@5.29.4(react@18.3.1)':
+    dependencies:
+      '@tolgee/web': 5.29.4
+      react: 18.3.1
+
+  '@tolgee/web@5.29.4':
+    dependencies:
+      '@tolgee/core': 5.29.4
 
   '@trpc/client@11.0.0-rc.566(@trpc/server@11.0.0-rc.566)':
     dependencies:
@@ -12104,6 +12206,13 @@ snapshots:
       hasown: 2.0.2
       side-channel: 1.0.6
 
+  intl-messageformat@10.7.0:
+    dependencies:
+      '@formatjs/ecma402-abstract': 2.2.0
+      '@formatjs/fast-memoize': 2.2.1
+      '@formatjs/icu-messageformat-parser': 2.7.10
+      tslib: 2.7.0
+
   invariant@2.2.4:
     dependencies:
       loose-envify: 1.4.0
@@ -12960,6 +13069,14 @@ snapshots:
   neo-async@2.6.2: {}
 
   nested-error-stacks@2.0.1: {}
+
+  next-intl@3.21.1(next@14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@formatjs/intl-localematcher': 0.5.5
+      negotiator: 0.6.3
+      next: 14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      use-intl: 3.21.1(react@18.3.1)
 
   next@14.2.14(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
@@ -14337,34 +14454,34 @@ snapshots:
 
   tslib@2.7.0: {}
 
-  turbo-darwin-64@2.1.3:
+  turbo-darwin-64@2.2.0:
     optional: true
 
-  turbo-darwin-arm64@2.1.3:
+  turbo-darwin-arm64@2.2.0:
     optional: true
 
-  turbo-linux-64@2.1.3:
+  turbo-linux-64@2.2.0:
     optional: true
 
-  turbo-linux-arm64@2.1.3:
+  turbo-linux-arm64@2.2.0:
     optional: true
 
   turbo-stream@2.4.0: {}
 
-  turbo-windows-64@2.1.3:
+  turbo-windows-64@2.2.0:
     optional: true
 
-  turbo-windows-arm64@2.1.3:
+  turbo-windows-arm64@2.2.0:
     optional: true
 
-  turbo@2.1.3:
+  turbo@2.2.0:
     optionalDependencies:
-      turbo-darwin-64: 2.1.3
-      turbo-darwin-arm64: 2.1.3
-      turbo-linux-64: 2.1.3
-      turbo-linux-arm64: 2.1.3
-      turbo-windows-64: 2.1.3
-      turbo-windows-arm64: 2.1.3
+      turbo-darwin-64: 2.2.0
+      turbo-darwin-arm64: 2.2.0
+      turbo-linux-64: 2.2.0
+      turbo-linux-arm64: 2.2.0
+      turbo-windows-64: 2.2.0
+      turbo-windows-arm64: 2.2.0
 
   type-check@0.4.0:
     dependencies:
@@ -14495,6 +14612,12 @@ snapshots:
       tslib: 2.7.0
     optionalDependencies:
       '@types/react': 18.3.11
+
+  use-intl@3.21.1(react@18.3.1):
+    dependencies:
+      '@formatjs/fast-memoize': 2.2.1
+      intl-messageformat: 10.7.0
+      react: 18.3.1
 
   use-latest-callback@0.2.1(react@18.2.0):
     dependencies:

@@ -4,10 +4,10 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 import { siteConfig } from "~/lib/site";
 import { navsConfig } from "~/lib/navs";
-import { Sheet, SheetContent, SheetTrigger } from "~/app/_components/ui/sheet";
-import { Button } from "~/app/_components/ui/button";
-import Icons from "~/app/_components/ui/icons";
-import { ScrollArea } from "~/app/_components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "~/components/ui/sheet";
+import { Button } from "~/components/ui/button";
+import Icons from "~/components/ui/icons";
+import { ScrollArea } from "~/components/ui/scroll-area";
 
 interface MobileLinkProps extends LinkProps {
   onOpenChange?: (open: boolean) => void;

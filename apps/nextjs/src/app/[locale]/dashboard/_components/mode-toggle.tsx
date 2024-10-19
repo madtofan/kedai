@@ -1,14 +1,14 @@
 "use client";
 import { LaptopIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import { useCallback, useContext } from "react";
-import { ThemeContext } from "./providers";
+import { ThemeContext } from "~/components/ui/providers";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "~/app/_components/ui/dropdown-menu";
-import { Button } from "~/app/_components/ui/button";
+} from "~/components/ui/dropdown-menu";
+import { Button } from "~/components/ui/button";
 
 export default function ModeToggle() {
   const [theme, setTheme] = useContext(ThemeContext);

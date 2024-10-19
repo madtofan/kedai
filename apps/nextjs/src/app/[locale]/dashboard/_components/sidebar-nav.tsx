@@ -9,7 +9,7 @@ interface SidebarNavItemsProps {
   pathname: string | null;
 }
 
-export function SidebarNavItems({ items, pathname }: SidebarNavItemsProps) {
+function SidebarNavItems({ items, pathname }: SidebarNavItemsProps) {
   return items?.length ? (
     <div className="grid grid-flow-row auto-rows-max text-sm">
       {items.map((item) =>
@@ -55,11 +55,11 @@ export function SidebarNavItems({ items, pathname }: SidebarNavItemsProps) {
   ) : null;
 }
 
-export interface DocsSidebarNavProps {
+interface DocsSidebarNavProps {
   items: SidebarNavItem[];
 }
 
-export function SidebarNav({ items }: DocsSidebarNavProps) {
+export default function SidebarNav({ items }: DocsSidebarNavProps) {
   const pathName = usePathname();
 
   return items.length ? (
