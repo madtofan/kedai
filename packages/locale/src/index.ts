@@ -4,7 +4,6 @@ import {
   type TolgeeStaticData,
   useTolgeeSSR,
 } from "@tolgee/react";
-import {} from "@tolgee/react";
 
 export { T as Tclient, TolgeeProvider, type TolgeeStaticData, useTolgeeSSR };
 export {

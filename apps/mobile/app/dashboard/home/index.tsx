@@ -20,7 +20,7 @@ export default function HomeScreen() {
         <Text>Store 1</Text>
       </Button>
       <Text>This page should display the stores available for the user</Text>
-      <Text>Hello {user?.emailAddresses[0].emailAddress}</Text>
+      <Text>Hello {user?.primaryEmailAddress?.emailAddress}</Text>
       <Text>{data ? data.greeting : "Loading tRPC query..."}</Text>
     </View>
   );

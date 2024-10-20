@@ -27,6 +27,7 @@
     "@rn-primitives/tooltip": "~1.0.3",
     "@rn-primitives/types": "~1.0.3",
     "@tanstack/react-query": "^5.50.0",
+    "@tolgee/react": "^5.29.4",
     "@trpc/client": "^11.0.0-rc.446",
     "@trpc/react-query": "^11.0.0-rc.446",
     "class-variance-authority": "^0.7.0",

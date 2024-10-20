@@ -14,6 +14,9 @@ import { setAndroidNavigationBar } from "~/lib/android-navigation-bar";
 import { useEffect, useState } from "react";
 import { getToken, saveToken } from "~/lib/session-store";
 import { TRPCProvider } from "~/lib/api";
+import { DevTools, FormatSimple, Tolgee, TolgeeProvider } from "@tolgee/react";
+import en from "~/assets/locales/en/mobile.json";
+import my from "~/assets/locales/my/mobile.json";
 
 export interface TokenCache {
   getToken: (key: string) => Promise<string | undefined | null>;
@@ -32,6 +35,22 @@ const DARK_THEME: Theme = {
 
 // Prevent the splash screen from auto-hiding before getting the color scheme.
 SplashScreen.preventAutoHideAsync();
+
+const tolgee = Tolgee()
+  // DevTools will work only for web view
+  .use(DevTools())
+  // FormatIcu currently doesn't work
+  .use(FormatSimple())
+  .init({
+    language: "en",
+
+    // for development
+    apiUrl: process.env.EXPO_PUBLIC_TOLGEE_API_URL!,
+    apiKey: process.env.EXPO_PUBLIC_TOLGEE_API_KEY!,
+
+    // include translations statically
+    staticData: { en, my },
+  });
 
 export default function RootLayout() {
   const { colorScheme, setColorScheme, isDarkColorScheme } = useColorScheme();
@@ -81,11 +100,13 @@ export default function RootLayout() {
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <TRPCProvider>
         <ClerkLoaded>
-          <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
-            <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
-            <Slot />
-            <PortalHost />
-          </ThemeProvider>
+          <TolgeeProvider tolgee={tolgee}>
+            <ThemeProvider value={isDarkColorScheme ? DARK_THEME : LIGHT_THEME}>
+              <StatusBar style={isDarkColorScheme ? "light" : "dark"} />
+              <Slot />
+              <PortalHost />
+            </ThemeProvider>
+          </TolgeeProvider>
         </ClerkLoaded>
       </TRPCProvider>
     </ClerkProvider>

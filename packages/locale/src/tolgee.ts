@@ -28,7 +28,7 @@ export async function getStaticData(
   for (const lang of languages) {
     for (const namespace of namespaces) {
       result[`${lang}:${namespace}`] = (
-        await import(`./${lang}/${namespace}.json`)
+        await import(`./locales/${lang}/${namespace}.json`)
       ).default;
     }
   }
