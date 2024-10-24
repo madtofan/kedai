@@ -1,13 +1,11 @@
-import { HydrateClient, api } from "~/trpc/server";
+import { HydrateClient } from "~/trpc/server";
+import DashboardContent from "./_content";
 
 export default async function DashboardPage() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  void api.post.getLatest.prefetch();
   return (
     <HydrateClient>
       <main>
-        {"DashboardPage"}
-        {hello ? hello.greeting : "Loading tRPC query..."}
+        <DashboardContent />
       </main>
     </HydrateClient>
   );

@@ -1,16 +1,10 @@
-/**
- * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
- * 1. You want to modify request context (see Part 1).
- * 2. You want to create a new middleware or type of procedure (see Part 3).
- *
- * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
- * need to use are documented accordingly near the end.
- */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "../db";
+import { auth } from "@clerk/nextjs/server";
+import { users } from "../db/schema";
 
 /**
  * 1. CONTEXT
@@ -104,3 +98,55 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * This guarantees that the user has logged in, and the userId can be obtained from ctx.user.userId
+ */
+export const protectedProcedure = publicProcedure.use(async (opts) => {
+  const clerkUser = auth();
+  if (!clerkUser.userId) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+  let user = await opts.ctx.db.query.users.findFirst({
+    where: (user, { eq }) => eq(user.clerkId, clerkUser.userId),
+    with: {
+      organizationRole: true,
+    },
+  });
+  if (!user) {
+    const createdUsers = await opts.ctx.db.insert(users).values({
+      clerkId: clerkUser.userId,
+      enabled: false,
+    });
+    if (createdUsers.length > 0 && createdUsers[0]) {
+      user = createdUsers[0];
+    }
+  }
+  return opts.next({
+    ctx: {
+      user,
+    },
+  });
+});
+
+/**
+ * Organization (authenticated with existing organization) procedure
+ *
+ * This guarantees that the user has logged in and the user has an existing organization, and the userId can be obtained from ctx.user.userId
+ */
+export const organizationProcedure = protectedProcedure.use(async (opts) => {
+  if (!opts.ctx.user?.organizationRole?.organizationId) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "User must be in an existing to perform this operation.",
+    });
+  }
+  const organizationId = opts.ctx.user.organizationRole.organizationId;
+  return opts.next({
+    ctx: {
+      organizationId,
+    },
+  });
+});

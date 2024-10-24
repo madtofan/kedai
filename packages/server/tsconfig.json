@@ -1,4 +1,5 @@
 {
   "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "esModuleInterop": true },
   "include": ["src", "index.ts", "transformer.ts", "drizzle.config.ts"]
 }

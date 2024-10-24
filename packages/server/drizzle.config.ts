@@ -9,4 +9,5 @@ export default {
     url: env.DATABASE_URL,
   },
   tablesFilter: ["kedai"],
+  schemaFilter: ["public"],
 } satisfies Config;

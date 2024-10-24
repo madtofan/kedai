@@ -9,7 +9,7 @@ import { api } from "~/lib/api";
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useUser();
-  const { data } = api.post.hello.useQuery({ text: "from TRPC" });
+  const { data } = api.store.getAllStore.useQuery();
   const onStorePress = (storeId: number) => {
     router.push(`/dashboard/home/${storeId}`);
   };
@@ -21,7 +21,7 @@ export default function HomeScreen() {
       </Button>
       <Text>This page should display the stores available for the user</Text>
       <Text>Hello {user?.primaryEmailAddress?.emailAddress}</Text>
-      <Text>{data ? data.greeting : "Loading tRPC query..."}</Text>
+      <Text>{data ? data.find(Boolean)?.name : "Loading tRPC query..."}</Text>
     </View>
   );
 }
