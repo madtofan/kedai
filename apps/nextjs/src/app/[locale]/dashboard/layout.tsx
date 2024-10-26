@@ -6,6 +6,9 @@ import SidebarNav from "./_components/sidebar-nav";
 import MainNav from "./_components/main-nav";
 import MobileNav from "./_components/mobile-nav";
 import ModeToggle from "./_components/mode-toggle";
+import { api } from "~/trpc/server";
+import { type TRPCError } from "@trpc/server";
+import { redirect } from "~/navigation";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -24,7 +27,16 @@ function DashboardContent({ children }: DashboardLayoutProps) {
   );
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
+export default async function DashboardLayout({
+  children,
+}: DashboardLayoutProps) {
+  const stores = await api.store.getAllStore().catch((err: TRPCError) => {
+    console.log({ err });
+    if (err.code === "FORBIDDEN") {
+      redirect("/no-organization");
+    }
+    redirect("/error");
+  });
   return (
     <>
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
