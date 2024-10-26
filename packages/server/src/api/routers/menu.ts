@@ -5,15 +5,43 @@ import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 const menuRouter = createTRPCRouter({
+  getMenu: organizationProcedure.query(async ({ ctx }) => {
+    const menuGroups = await ctx.db.query.menuGroups.findMany({
+      columns: {
+        id: true,
+        name: true,
+      },
+      where: (menuGroup, { eq }) =>
+        eq(menuGroup.organizationId, ctx.organizationId),
+      with: {
+        menus: {
+          columns: {
+            updatedAt: false,
+            menuDetailsId: false,
+            menuGroupId: false,
+          },
+          with: {
+            menuDetails: {
+              columns: {
+                updatedAt: false,
+              },
+            },
+          },
+        },
+      },
+    });
+    return menuGroups;
+  }),
+
   addMenu: organizationProcedure
     .input(
       z.object({
         menuGroupId: z.number().int(),
-        name: z.string().min(1).max(256),
-        description: z.string().max(256).optional(),
-        image: z.string().url().max(256).optional(),
-        sale: z.string().default("0.00"),
-        cost: z.string().default("0.00"),
+        name: z.string().trim().min(1).max(256),
+        description: z.string().trim().max(256).optional(),
+        image: z.string().trim().url().max(256).optional(),
+        sale: z.string().trim().default("0.00"),
+        cost: z.string().trim().default("0.00"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -61,11 +89,11 @@ const menuRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.number().int(),
-        name: z.string().min(1).max(256),
-        description: z.string().max(256).optional(),
-        image: z.string().url().max(256).optional(),
-        sale: z.string().default("0.00"),
-        cost: z.string().default("0.00"),
+        name: z.string().trim().min(1).max(256),
+        description: z.string().trim().max(256).optional(),
+        image: z.string().trim().url().max(256).optional(),
+        sale: z.string().trim().default("0.00"),
+        cost: z.string().trim().default("0.00"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -170,33 +198,6 @@ const menuRouter = createTRPCRouter({
       }
       return { success: true };
     }),
-
-  getMenus: organizationProcedure.query(async ({ ctx }) => {
-    const menuGroups = await ctx.db.query.menuGroups.findMany({
-      columns: { name: true },
-      where: (menuGroup, { eq }) =>
-        eq(menuGroup.organizationId, ctx.organizationId),
-      with: {
-        menus: {
-          columns: {
-            id: false,
-            menuGroupId: false,
-            menuDetailsId: false,
-          },
-          with: {
-            menuDetails: {
-              columns: {
-                id: false,
-                createdAt: false,
-                updatedAt: false,
-              },
-            },
-          },
-        },
-      },
-    });
-    return menuGroups;
-  }),
 });
 
 export default menuRouter;

@@ -3,6 +3,7 @@ import {
   menuRouter,
   orderRouter,
   organizationRouter,
+  roleRouter,
   storeRouter,
   userRouter,
 } from "./routers";
@@ -19,6 +20,7 @@ export const appRouter = createTRPCRouter({
   menuGroup: menuGroupRouter,
   order: orderRouter,
   organization: organizationRouter,
+  role: roleRouter,
   user: userRouter,
   store: storeRouter,
 });

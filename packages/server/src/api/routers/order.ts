@@ -12,8 +12,8 @@ const orderRouter = createTRPCRouter({
   addOrder: publicProcedure
     .input(
       z.object({
-        storeSlug: z.string().min(1),
-        tableName: z.string().min(1),
+        storeSlug: z.string().trim().min(1).max(256),
+        tableName: z.string().trim().min(1).max(256),
         orders: z.array(
           z.object({
             menuDetailsId: z.number().int(),
@@ -93,9 +93,9 @@ const orderRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.number().int(),
-        itemStatuses: z.string().min(1).max(256),
+        itemStatuses: z.string().trim().min(1).max(256),
         completedValue: z.number().optional(),
-        remarks: z.string().max(256).optional(),
+        remarks: z.string().trim().max(256).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -168,7 +168,7 @@ const orderRouter = createTRPCRouter({
       z.object({
         id: z.number().int(),
         quantity: z.number().optional(),
-        status: z.string().max(256).optional(),
+        status: z.string().trim().max(256).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

@@ -6,7 +6,7 @@ import { TRPCError } from "@trpc/server";
 
 const menuGroupRouter = createTRPCRouter({
   addMenuGroup: organizationProcedure
-    .input(z.object({ name: z.string().min(1) }))
+    .input(z.object({ name: z.string().trim().min(1).max(256) }))
     .mutation(async ({ ctx, input }) => {
       const { organizationId: _organizationId, ...columns } =
         getTableColumns(menuGroups);
@@ -29,7 +29,12 @@ const menuGroupRouter = createTRPCRouter({
     }),
 
   editMenuGroup: organizationProcedure
-    .input(z.object({ id: z.number().int(), name: z.string().min(1) }))
+    .input(
+      z.object({
+        id: z.number().int(),
+        name: z.string().trim().min(1).max(256),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const { organizationId: _organizationId, ...columns } =
         getTableColumns(menuGroups);

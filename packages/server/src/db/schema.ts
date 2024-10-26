@@ -41,6 +41,9 @@ export const invites = createTable(
   {
     id: serial("id").primaryKey(),
     email: varchar("email", { length: 256 }).notNull().unique(),
+    createdBy: integer("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
     organizationId: integer("organization_id")
       .references(() => organizations.id, { onDelete: "cascade" })
       .notNull(),
@@ -58,6 +61,10 @@ export const invites = createTable(
   }),
 );
 export const invitesRelations = relations(invites, ({ one }) => ({
+  createdBy: one(users, {
+    fields: [invites.createdBy],
+    references: [users.id],
+  }),
   organization: one(organizations, {
     fields: [invites.organizationId],
     references: [organizations.id],
@@ -101,7 +108,8 @@ export const organizationRolesRelations = relations(
 
 export const permissions = createTable("permissions", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 256 }).notNull(),
+  name: varchar("name", { length: 256 }).unique().notNull(),
+  displayName: varchar("name", { length: 256 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -155,6 +163,9 @@ export const users = createTable(
     clerkId: varchar("clerk_id", { length: 256 }).notNull(),
     enabled: boolean("enabled"),
     userEmail: varchar("user_email", { length: 256 }),
+    firstName: varchar("first_name", { length: 256 }),
+    lastName: varchar("last_name", { length: 256 }),
+    fullName: varchar("full_name", { length: 256 }),
     organizationRoleId: integer("organization_role_id").references(
       () => organizationRoles.id,
       { onDelete: "set null" },
@@ -173,11 +184,12 @@ export const users = createTable(
     ),
   }),
 );
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   organizationRole: one(organizationRoles, {
     fields: [users.organizationRoleId],
     references: [organizationRoles.id],
   }),
+  invites: many(invites),
 }));
 
 export const stores = createTable(
@@ -185,6 +197,7 @@ export const stores = createTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
+    isOpen: boolean("is_open").default(false),
     slug: varchar("slug", { length: 256 }).notNull().unique(),
     organizationId: integer("organization_id")
       .references(() => organizations.id, { onDelete: "cascade" })
@@ -208,6 +221,7 @@ export const storesRelations = relations(stores, ({ one, many }) => ({
     references: [organizations.id],
   }),
   orders: many(orders),
+  storeMenus: many(storeMenus),
 }));
 
 export const menuGroups = createTable(
@@ -261,6 +275,40 @@ export const menuDetails = createTable(
 );
 export const menuDetailsRelations = relations(menuDetails, ({ many }) => ({
   menuToMenuDetails: many(menuToMenuDetails),
+}));
+
+export const storeMenus = createTable(
+  "store_menus",
+  {
+    id: serial("id").primaryKey(),
+    storeSlug: varchar("store_slug")
+      .references(() => stores.slug, { onDelete: "cascade" })
+      .notNull(),
+    menuId: integer("menu_id")
+      .references(() => menus.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
+  },
+  (example) => ({
+    storeIndex: index("menu_store_index").on(example.storeSlug),
+  }),
+);
+export const storeMenusRelations = relations(storeMenus, ({ one }) => ({
+  store: one(stores, {
+    fields: [storeMenus.storeSlug],
+    references: [stores.slug],
+  }),
+  menu: one(menus, {
+    fields: [storeMenus.menuId],
+    references: [menus.id],
+  }),
 }));
 
 export const menus = createTable(

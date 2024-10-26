@@ -3,7 +3,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "../db";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { users } from "../db/schema";
 
 /**
@@ -111,12 +111,44 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
   }
   let user = await opts.ctx.db.query.users.findFirst({
     where: (user, { eq }) => eq(user.clerkId, clerkUser.userId),
+    columns: {
+      organizationRoleId: false,
+      createdAt: false,
+      updatedAt: false,
+    },
     with: {
-      organizationRole: true,
+      organizationRole: {
+        columns: {
+          isAdmin: true,
+          organizationId: true,
+        },
+        with: {
+          permissions: {
+            columns: {
+              id: false,
+              organizationRoleId: false,
+              permissionId: false,
+              createdAt: false,
+              updatedAt: false,
+            },
+            with: {
+              permission: {
+                columns: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      },
     },
   });
   if (!user) {
+    const userDetail = await clerkClient.users.getUser(clerkUser.userId);
     const createdUsers = await opts.ctx.db.insert(users).values({
+      firstName: userDetail.firstName,
+      lastName: userDetail.lastName,
+      fullName: userDetail.fullName,
       clerkId: clerkUser.userId,
       enabled: false,
     });
@@ -137,6 +169,7 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
  * This guarantees that the user has logged in and the user has an existing organization, and the userId can be obtained from ctx.user.userId
  */
 export const organizationProcedure = protectedProcedure.use(async (opts) => {
+  console.log({ path: opts.path });
   if (!opts.ctx.user?.organizationRole?.organizationId) {
     throw new TRPCError({
       code: "FORBIDDEN",

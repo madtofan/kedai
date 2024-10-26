@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 
 const organizationRouter = createTRPCRouter({
   createOrganization: protectedProcedure
-    .input(z.object({ name: z.string().min(1) }))
+    .input(z.object({ name: z.string().trim().min(1) }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user?.organizationRole?.organizationId || !ctx.user?.clerkId) {
         throw new TRPCError({
@@ -69,7 +69,7 @@ const organizationRouter = createTRPCRouter({
       return response;
     }),
 
-  deleteOrganization: organizationProcedure.query(async ({ ctx }) => {
+  deleteOrganization: organizationProcedure.mutation(async ({ ctx }) => {
     const deletedOrganization = await ctx.db
       .delete(organizations)
       .where(eq(organizations.id, ctx.organizationId))
@@ -92,13 +92,18 @@ const organizationRouter = createTRPCRouter({
           columns: { organizationId: false },
           with: {
             users: {
-              columns: { organizationRoleId: false },
+              columns: {
+                organizationRoleId: false,
+                createdAt: false,
+                updatedAt: false,
+                clerkId: false,
+              },
             },
           },
         },
       },
     });
-    if (organization) {
+    if (!organization) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Unable to retrieve organization.",

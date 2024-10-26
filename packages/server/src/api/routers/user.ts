@@ -10,12 +10,19 @@ import { TRPCError } from "@trpc/server";
 
 const userRouter = createTRPCRouter({
   inviteUser: organizationProcedure
-    .input(z.object({ email: z.string().email() }))
+    .input(z.object({ email: z.string().email().trim().max(256) }))
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.id) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to verify user.",
+        });
+      }
       const invitedUser = await ctx.db
         .insert(invites)
         .values({
           email: input.email,
+          createdBy: ctx.user.id,
           organizationId: ctx.organizationId,
         })
         .returning({ id: invites.id });
@@ -29,62 +36,142 @@ const userRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  acceptInvite: protectedProcedure.mutation(async ({ ctx }) => {
-    if (!ctx.user?.userEmail) {
+  checkForInvitation: protectedProcedure.query(async ({ ctx }) => {
+    const userEmail = ctx.user?.userEmail;
+    if (!userEmail) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Failed to verify user email.",
       });
     }
-    await ctx.db.delete(invites).where(eq(invites.email, ctx.user.userEmail));
-    // TODO - send email to user
-    return { success: true };
+    const invites = await ctx.db.query.invites.findMany({
+      where: (invite, { eq }) => eq(invite.email, userEmail),
+      columns: {
+        organizationId: false,
+        updatedAt: false,
+        email: false,
+      },
+      with: {
+        createdBy: {
+          columns: {
+            fullName: true,
+          },
+        },
+        organization: {
+          columns: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return invites;
   }),
 
-  addUser: organizationProcedure
-    .input(z.object({ email: z.string().email() }))
+  acceptInvite: protectedProcedure
+    .input(z.object({ invitationId: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
-      const defaultRole = await ctx.db.query.organizationRoles.findFirst({
-        where: (organizationRole, { eq }) =>
-          and(
-            eq(organizationRole.organizationId, ctx.organizationId),
-            eq(organizationRole.isDefault, true),
-          ),
-      });
-      if (!defaultRole) {
+      const userEmail = ctx.user?.userEmail;
+      if (!userEmail) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Organization must have a default role.",
+          message: "Failed to verify user email.",
+        });
+      }
+      if (ctx.user?.organizationRole) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "User is already in an organization.",
         });
       }
 
-      const { clerkId: _clerkId, ...columns } = getTableColumns(users);
-      const addedUser = await ctx.db
-        .update(users)
-        .set({
-          organizationRoleId: defaultRole.id,
-        })
-        .where(
-          and(
-            isNull(users.organizationRoleId),
-            eq(users.userEmail, input.email),
-          ),
-        )
-        .returning(columns);
-      if (!addedUser) {
+      const invite = await ctx.db.query.invites.findFirst({
+        columns: {
+          id: false,
+          createdAt: false,
+          updatedAt: false,
+          email: false,
+          organizationId: false,
+          createdBy: false,
+        },
+        where: (invite, { eq, and }) =>
+          and(eq(invite.id, input.invitationId), eq(invite.email, userEmail)),
+        with: {
+          organization: {
+            columns: {
+              id: true,
+            },
+            with: {
+              organizationRoles: {
+                columns: {
+                  id: true,
+                  isDefault: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!invite) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "User does not exist or have is in an existing organization",
+          message: "Failed to verify invitation.",
         });
       }
+
+      const organizationRole =
+        invite.organization.organizationRoles.find((role) => role.isDefault) ??
+        invite.organization.organizationRoles.find(Boolean);
+
+      if (!organizationRole) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to obtain organization roles.",
+        });
+      }
+
+      await ctx.db
+        .update(users)
+        .set({
+          organizationRoleId: organizationRole.id,
+        })
+        .where(eq(users.userEmail, userEmail));
+
+      await ctx.db
+        .delete(invites)
+        .where(
+          and(eq(invites.email, userEmail), eq(invites.id, input.invitationId)),
+        );
       // TODO - send email to user
-      return addedUser;
+      return { success: true };
+    }),
+
+  declineInvite: protectedProcedure
+    .input(z.object({ invitationId: z.number().int() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.userEmail) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to verify user email.",
+        });
+      }
+      await ctx.db
+        .delete(invites)
+        .where(
+          and(
+            eq(invites.email, ctx.user.userEmail),
+            eq(invites.id, input.invitationId),
+          ),
+        );
+      // TODO - send email to user
+      return { success: true };
     }),
 
   removeUser: organizationProcedure
-    .input(z.object({ email: z.string().email() }))
+    .input(z.object({ userId: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user?.userEmail === input.email) {
+      if (ctx.user?.id === input.userId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "User cannot remove self.",
@@ -107,7 +194,7 @@ const userRouter = createTRPCRouter({
         .where(
           and(
             inArray(users.organizationRoleId, organizationRoles),
-            eq(users.userEmail, input.email),
+            eq(users.id, input.userId),
           ),
         )
         .returning({ id: users.id });
@@ -120,6 +207,30 @@ const userRouter = createTRPCRouter({
       }
       return { success: true };
     }),
+
+  leaveOrganization: organizationProcedure.mutation(async ({ ctx }) => {
+    if (!ctx.user?.id) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "User not found.",
+      });
+    }
+    const removedUser = await ctx.db
+      .update(users)
+      .set({
+        organizationRoleId: null,
+      })
+      .where(and(eq(users.id, ctx.user.id)))
+      .returning({ id: users.id });
+
+    if (!removedUser) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to remove organization from user.",
+      });
+    }
+    return { success: true };
+  }),
 });
 
 export default userRouter;
