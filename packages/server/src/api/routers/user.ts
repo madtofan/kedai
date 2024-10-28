@@ -5,10 +5,14 @@ import {
   protectedProcedure,
 } from "../trpc";
 import { invites, users } from "../../db/schema";
-import { and, eq, getTableColumns, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 const userRouter = createTRPCRouter({
+  getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
+    return ctx.user;
+  }),
+
   inviteUser: organizationProcedure
     .input(z.object({ email: z.string().email().trim().max(256) }))
     .mutation(async ({ ctx, input }) => {

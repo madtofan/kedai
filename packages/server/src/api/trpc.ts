@@ -148,6 +148,7 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
     const createdUsers = await opts.ctx.db.insert(users).values({
       firstName: userDetail.firstName,
       lastName: userDetail.lastName,
+      userEmail: userDetail.primaryEmailAddress!.emailAddress,
       fullName: userDetail.fullName,
       clerkId: clerkUser.userId,
       enabled: false,

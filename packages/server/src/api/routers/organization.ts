@@ -4,13 +4,25 @@ import {
   organizationProcedure,
   protectedProcedure,
 } from "../trpc";
-import { organizationRoles, organizations, users } from "../../db/schema";
+import {
+  menuGroups,
+  organizationRoles,
+  organizations,
+  stores,
+  users,
+} from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import slug from "slug";
 
 const organizationRouter = createTRPCRouter({
   createOrganization: protectedProcedure
-    .input(z.object({ name: z.string().trim().min(1) }))
+    .input(
+      z.object({
+        organizationName: z.string().trim().min(1),
+        storeName: z.string().trim().min(1),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (ctx.user?.organizationRole?.organizationId || !ctx.user?.clerkId) {
         throw new TRPCError({
@@ -23,7 +35,7 @@ const organizationRouter = createTRPCRouter({
       const createdOrganization = (
         await ctx.db
           .insert(organizations)
-          .values({ name: input.name })
+          .values({ name: input.organizationName })
           .returning()
       ).find(Boolean);
 
@@ -52,11 +64,28 @@ const organizationRouter = createTRPCRouter({
         });
       }
 
+      await ctx.db.insert(stores).values({
+        organizationId: createdOrganization.id,
+        name: input.storeName,
+        slug: slug(input.storeName),
+      });
+
       await ctx.db.insert(organizationRoles).values({
         name: "member",
         organizationId: createdOrganization.id,
         isDefault: true,
       });
+
+      await ctx.db.insert(menuGroups).values([
+        {
+          organizationId: createdOrganization.id,
+          name: "Food",
+        },
+        {
+          organizationId: createdOrganization.id,
+          name: "Drinks",
+        },
+      ]);
 
       await ctx.db
         .update(users)
