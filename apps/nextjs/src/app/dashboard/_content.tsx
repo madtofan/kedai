@@ -3,9 +3,8 @@ import { api } from "~/trpc/react";
 
 export default function DashboardContent() {
   const { data: stores, error } = api.store.getAllStore.useQuery();
-  console.log({ stores, error });
   if (error) {
-    return <>{`${(error as Error).message}`}</>;
+    return <>{error.message}</>;
   }
   return (
     <>

@@ -4,9 +4,9 @@ import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { loggerLink, unstable_httpBatchStreamLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { useState } from "react";
-import { Transformer } from "@acme/api/transformer";
+import { Transformer } from "@kedai/api/transformer";
 
-import { type AppRouter } from "@acme/api";
+import { type AppRouter } from "@kedai/api";
 import { createQueryClient } from "./query-client";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;

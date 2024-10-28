@@ -1,4 +1,5 @@
-import { ReactNode } from "react";
+"use client";
+import { useState, type ReactNode } from "react";
 import {
   Dialog,
   DialogClose,
@@ -31,9 +32,18 @@ export default function ConfirmationDialog({
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   onCancel = () => {},
 }: ConfirmationDialogProps) {
+  const [open, setOpen] = useState(false);
+
+  const handleSubmit = () => {
+    setOpen(false);
+    onSubmit();
+  };
+
   return (
     <Dialog
+      open={open}
       onOpenChange={(open) => {
+        setOpen(open);
         if (!open) {
           onCancel();
         }
@@ -53,7 +63,7 @@ export default function ConfirmationDialog({
               </Button>
             </DialogClose>
           )}
-          <Button onClick={onSubmit}>{confirmText}</Button>
+          <Button onClick={handleSubmit}>{confirmText}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,3 +1,5 @@
+"use client";
+import { useRouter } from "next/navigation";
 import { Plus, Send, Trash } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -13,7 +15,6 @@ import { useMemo, useState } from "react";
 import { Spinner } from "~/components/ui/spinner";
 import { useToast } from "~/lib/use-toast";
 import { type TRPCError } from "@trpc/server";
-import { redirect } from "~/navigation";
 import ConfirmationDialog from "~/components/confirmation-dialog";
 import {
   Popover,
@@ -24,6 +25,7 @@ import { Input } from "~/components/ui/input";
 
 export default function DashboardOrganizationContent() {
   const [inviteUserEmail, setInviteUserEmail] = useState("");
+  const router = useRouter();
 
   const { toast } = useToast();
 
@@ -86,7 +88,7 @@ export default function DashboardOrganizationContent() {
           title: "Deleted organization",
           description: `Successfully deleted organization.`,
         });
-        redirect("/:locale/no-organization");
+        router.replace("/no-organization");
       })
       .catch((error: TRPCError) => {
         toast({
@@ -103,19 +105,20 @@ export default function DashboardOrganizationContent() {
 
   return (
     <>
-      <div className="mb-6 rounded-lg bg-white p-6 shadow">
+      <div className="mb-6 rounded-lg bg-sidebar p-6 shadow">
         <h2 className="mb-4 text-lg font-semibold">{organization.name}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2"></div>
-        <div className="flex items-end">
+        <div className="flex items-end gap-4">
           <Popover>
             <PopoverTrigger asChild>
-              <Button className="mr-2 h-4 w-4">
+              <Button>
                 <Send className="mr-2 h-4 w-4" />
                 Invite User
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80">
               <Input
+                className="mb-4"
                 value={inviteUserEmail}
                 onChange={(event) => setInviteUserEmail(event.target.value)}
               />
@@ -124,7 +127,7 @@ export default function DashboardOrganizationContent() {
               </Button>
             </PopoverContent>
           </Popover>
-          <Button className="mr-2 h-4 w-4">
+          <Button>
             <Plus className="mr-2 h-4 w-4" />
             Add Role
           </Button>
@@ -133,7 +136,7 @@ export default function DashboardOrganizationContent() {
             description="This action cannot be undone. This will permanently delete your organization and remove your data from our servers."
             onSubmit={handleDeleteOrganization}
             triggerButton={
-              <Button className="mr-2 h-4 w-4">
+              <Button>
                 <Trash className="mr-2 h-4 w-4" />
                 Delete Organization
               </Button>
@@ -142,7 +145,7 @@ export default function DashboardOrganizationContent() {
           />
         </div>
       </div>
-      <div className="overflow-hidden rounded-lg bg-white shadow">
+      <div className="overflow-hidden rounded-lg bg-sidebar p-6 shadow">
         <h2 className="mb-4 text-lg font-semibold">Organization Members</h2>
         <Table>
           <TableHeader>

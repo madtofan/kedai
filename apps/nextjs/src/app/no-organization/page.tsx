@@ -1,10 +1,9 @@
 "use client";
-
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Plus, Check, X } from "lucide-react";
 import { useToast } from "~/lib/use-toast";
 import { api } from "~/trpc/react";
-import { redirect } from "~/navigation";
 import { type TRPCError } from "@trpc/server";
 import {
   Card,
@@ -22,23 +21,27 @@ import { Spinner } from "~/components/ui/spinner";
 
 export default function NoOrganization() {
   const [organizationName, setOrganizationName] = useState("");
+  const [storeName, setStoreName] = useState("");
   const { toast } = useToast();
+  const router = useRouter();
 
   const { mutateAsync: createOrganization } =
     api.organization.createOrganization.useMutation();
 
   const handleCreateOrganization = () => {
     createOrganization({
-      name: organizationName,
+      organizationName,
+      storeName,
     })
       .then(() => {
         toast({
           title: "Organization Created",
           description: `Your organization "${organizationName}" has been created successfully.`,
         });
-        redirect("/:locale/dashboard");
+        router.replace("/dashboard");
       })
       .catch((error: TRPCError) => {
+        console.log("error", error);
         toast({
           title: "Error",
           description: error.message,
@@ -59,14 +62,21 @@ export default function NoOrganization() {
             Start managing your restaurant by creating an organization.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-4">
+        <CardContent className="grid gap-4">
+          <div className="flex flex-col space-y-2">
             <Label htmlFor="organizationName">Organization Name</Label>
             <Input
               id="organizationName"
-              placeholder="Enter your organization name"
               value={organizationName}
               onChange={(e) => setOrganizationName(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col space-y-2">
+            <Label htmlFor="storeName">Store Name</Label>
+            <Input
+              id="storeName"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
             />
           </div>
         </CardContent>
@@ -83,14 +93,23 @@ export default function NoOrganization() {
 }
 
 function InvitationCard() {
+  const router = useRouter();
   const { toast } = useToast();
 
   const { data: invitations } = api.user.checkForInvitation.useQuery();
+
+  const { data: userInformation } = api.user.getCurrentUser.useQuery();
 
   const { mutateAsync: acceptInvitation } = api.user.acceptInvite.useMutation();
 
   const { mutateAsync: declineInvitation } =
     api.user.declineInvite.useMutation();
+
+  useEffect(() => {
+    if (userInformation?.organizationRole) {
+      router.replace("/dashboard");
+    }
+  }, [router, userInformation?.organizationRole]);
 
   const handleAcceptInvitation = (invitationId: number) => {
     acceptInvitation({
@@ -101,7 +120,7 @@ function InvitationCard() {
           title: "Invitation Accepted",
           description: "You have successfully joined the organization.",
         });
-        redirect("/:locale/dashboard");
+        router.replace("/dashboard");
       })
       .catch((error: TRPCError) => {
         toast({
@@ -121,7 +140,6 @@ function InvitationCard() {
           title: "Invitation Declined",
           description: "You have declined the organization invitation.",
         });
-        redirect("/:locale/dashboard");
       })
       .catch((error: TRPCError) => {
         toast({
@@ -132,7 +150,7 @@ function InvitationCard() {
       });
   };
 
-  if (!invitations) {
+  if (invitations === undefined) {
     return <Spinner />;
   }
 

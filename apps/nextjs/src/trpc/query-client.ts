@@ -2,7 +2,7 @@ import {
   defaultShouldDehydrateQuery,
   QueryClient,
 } from "@tanstack/react-query";
-import { Transformer } from "@acme/api/transformer";
+import { Transformer } from "@kedai/api/transformer";
 
 export const createQueryClient = () =>
   new QueryClient({

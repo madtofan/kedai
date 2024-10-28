@@ -11,23 +11,20 @@ import {
 import { Check, CreditCard, BarChart, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { getTranslate, T as Tserver } from "~/lib/tolgee-server";
 
 export default async function HomeContent() {
-  const t = await getTranslate();
-
   return (
     <div className="flex min-h-[100dvh] flex-col">
       <header className="flex h-14 items-center gap-4 px-4 sm:gap-6 lg:px-6">
         <Link className="flex items-center justify-center" href="#">
           <CreditCard className="h-6 w-6" />
-          <span className="sr-only">{t("swift_pos")}</span>
+          <span className="sr-only">Swift POS</span>
         </Link>
         <Link
           className="text-sm font-medium underline-offset-4 hover:underline"
           href="#features"
         >
-          <Tserver keyName="translate_me">Features</Tserver>
+          Features
         </Link>
         <Link
           className="text-sm font-medium underline-offset-4 hover:underline"

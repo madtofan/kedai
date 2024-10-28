@@ -1,6 +1,12 @@
-import { redirect } from "next/navigation";
+import { HydrateClient } from "~/trpc/server";
+import HomeContent from "./_page-content";
 
-// This page only renders when the app is built statically (output: 'export')
-export default function RootPage() {
-  redirect("/en");
+export default function Home() {
+  return (
+    <HydrateClient>
+      <main>
+        <HomeContent />
+      </main>
+    </HydrateClient>
+  );
 }

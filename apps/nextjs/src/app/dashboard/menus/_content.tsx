@@ -1,3 +1,4 @@
+"use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,15 +31,15 @@ import {
 } from "~/components/ui/form";
 import { api } from "~/trpc/react";
 import { useEffect, useMemo } from "react";
-import { redirect } from "~/navigation";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
-  menuGroupId: z.number().int(),
+  menuGroupId: z.coerce.number().positive(),
   name: z.string().min(1).max(256),
   description: z.string().max(256).optional(),
   image: z.string().url().max(256).optional(),
-  sale: z.number(),
-  cost: z.number(),
+  sale: z.coerce.number(),
+  cost: z.coerce.number(),
 });
 
 interface Menu {
@@ -56,6 +57,7 @@ interface Menu {
 }
 
 export default function DashboardMenuPageContent() {
+  const router = useRouter();
   const { data: selectOptions, error: menuGroupError } =
     api.menuGroup.getAllMenuGroup.useQuery();
   const { data: organizationMenus, error: menuError } =
@@ -66,9 +68,9 @@ export default function DashboardMenuPageContent() {
       menuError?.data?.code === "FORBIDDEN" ||
       menuGroupError?.data?.code === "FORBIDDEN"
     ) {
-      redirect("/:locale/dashboard/organization");
+      router.push("/dashboard/organization");
     }
-  }, [menuError?.data?.code, menuGroupError?.data?.code]);
+  }, [menuError?.data?.code, menuGroupError?.data?.code, router]);
 
   const menuItems: Menu[] = useMemo(() => {
     if (!organizationMenus) {
@@ -108,19 +110,20 @@ export default function DashboardMenuPageContent() {
 
   return (
     <>
-      <div className="mb-6 rounded-lg bg-white p-6 shadow">
+      <div className="mb-6 rounded-lg bg-sidebar p-6 shadow">
         <h2 className="mb-4 text-lg font-semibold">Add New Menu Item</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="">
+          {/* className="grid grid-cols-1 gap-4 md:grid-cols-2" */}
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               <FormField
                 control={form.control}
                 name="name"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="space-y-0">
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input {...field} className="bg-background" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -133,7 +136,12 @@ export default function DashboardMenuPageContent() {
                   <FormItem>
                     <FormLabel>Sale Price</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input
+                        {...field}
+                        className="bg-background"
+                        type="number"
+                        step={0.01}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,7 +154,12 @@ export default function DashboardMenuPageContent() {
                   <FormItem>
                     <FormLabel>Cost</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input
+                        {...field}
+                        className="bg-background"
+                        type="number"
+                        step={0.01}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -157,9 +170,12 @@ export default function DashboardMenuPageContent() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cost</FormLabel>
+                    <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea className="resize-none" {...field} />
+                      <Textarea
+                        className="resize-none bg-background"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -176,7 +192,7 @@ export default function DashboardMenuPageContent() {
                       defaultValue={`${field.value}`}
                     >
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-background">
                           <SelectValue placeholder="Select a group for this menu" />
                         </SelectTrigger>
                       </FormControl>
@@ -193,7 +209,7 @@ export default function DashboardMenuPageContent() {
                 )}
               />
               <div className="flex items-end">
-                <Button type="submit" className="mr-2 h-4 w-4">
+                <Button type="submit">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Item
                 </Button>
@@ -203,7 +219,7 @@ export default function DashboardMenuPageContent() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-lg bg-white shadow">
+      <div className="overflow-hidden rounded-lg bg-sidebar p-6 shadow">
         <Table>
           <TableHeader>
             <TableRow>

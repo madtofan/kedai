@@ -1,23 +1,16 @@
-"use client"
-
-import * as React from "react"
+"use client";
+import * as React from "react";
 import {
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
+  Beef,
+  BookOpenText,
+  Building,
   LifeBuoy,
-  Map,
-  PieChart,
   Send,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react"
-
-import { NavMain } from "~/components/nav-main"
-import { NavProjects } from "~/components/nav-projects"
-import { NavSecondary } from "~/components/nav-secondary"
-import { NavUser } from "~/components/nav-user"
+  Store,
+} from "lucide-react";
+import { NavMain } from "~/components/nav-main";
+import { NavStores } from "~/components/nav-projects";
+import { NavSecondary } from "~/components/nav-secondary";
 import {
   Sidebar,
   SidebarContent,
@@ -26,97 +19,51 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "~/components/ui/sidebar"
+} from "~/components/ui/sidebar";
+import { type RouterOutput } from "~/trpc/server";
+import { useMemo } from "react";
+import { UserButton } from "@clerk/nextjs";
 
 const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
   navMain: [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
+      title: "Organization",
+      url: "/dashboard/organization",
+      icon: Building,
       items: [
         {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
+          title: "My Organization",
+          url: "/dashboard/organization",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
+      title: "Store",
+      url: "/dashboard/stores",
+      icon: Store,
       items: [
         {
-          title: "Genesis",
-          url: "#",
+          title: "Manage Stores",
+          url: "/dashboard/stores",
         },
         {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
+          title: "Active Orders",
+          url: "/dashboard/stores/active-orders",
         },
       ],
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
+      title: "Menu",
+      url: "/dashboard/menus",
+      icon: BookOpenText,
       items: [
         {
-          title: "Introduction",
-          url: "#",
+          title: "All Menu",
+          url: "/dashboard/menus",
         },
         {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
+          title: "Menu Groups",
+          url: "/dashboard/menus",
         },
       ],
     },
@@ -133,26 +80,24 @@ const data = {
       icon: Send,
     },
   ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+};
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  stores,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & {
+  stores: RouterOutput["store"]["getAllStore"];
+}) {
+  const navStores = useMemo(
+    () =>
+      stores.map((store) => ({
+        id: store.id,
+        name: store.name,
+        url: `/dashboard/store/${store.slug}`,
+        isOpen: store.isOpen,
+      })),
+    [stores],
+  );
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -161,11 +106,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton size="lg" asChild>
               <a href="#">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Command className="size-4" />
+                  <Beef className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
+                  <span className="truncate font-semibold">Kedai</span>
+                  <span className="truncate text-xs">Solutions</span>
                 </div>
               </a>
             </SidebarMenuButton>
@@ -174,12 +119,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavStores stores={navStores} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <UserButton showName={true} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, loggerLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
-import { Transformer } from "@acme/api/transformer";
+import { Transformer } from "@kedai/api/transformer";
 
-import type { AppRouter } from "@acme/api";
+import type { AppRouter } from "@kedai/api";
 
 import { getToken } from "./session-store";
 import { getBaseUrl } from "./base-url";
@@ -13,7 +13,7 @@ import { getBaseUrl } from "./base-url";
  * A set of typesafe hooks for consuming your API.
  */
 export const api = createTRPCReact<AppRouter>();
-export { type RouterInputs, type RouterOutputs } from "@acme/api";
+export { type RouterInputs, type RouterOutputs } from "@kedai/api";
 
 /**
  * A wrapper for your app that provides the TRPC context.

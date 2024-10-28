@@ -1,17 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
-export const useTheme = (): [string, (theme: string) => void] => {
+const getTheme = () => {
   let initialTheme = "system";
   if (typeof window !== "undefined") {
     initialTheme = window.localStorage.getItem("theme") ?? "system";
   }
-  const [theme, setInnerTheme] = useState(initialTheme);
+  return initialTheme;
+};
+
+const updateDocumentBody = (theme: string) => {
+  document.body.classList.remove("light", "dark", "system");
+  document.body.classList.add(theme);
+};
+
+export const useTheme = (): [string, (theme: string) => void] => {
+  const [theme, setInnerTheme] = useState("system");
 
   useEffect(() => {
-    document.body.classList.remove("light", "dark", "system");
-    document.body.classList.add(theme);
+    setInnerTheme(getTheme);
+  }, []);
+
+  useLayoutEffect(() => {
+    updateDocumentBody(theme);
   }, [theme]);
 
   const setTheme = (themeName: string) => {

@@ -1,7 +1,7 @@
 import { api, HydrateClient } from "~/trpc/server";
 import RestaurantOrder from "./_content";
 import { type TRPCError } from "@trpc/server";
-import { redirect } from "~/navigation";
+import { redirect } from "next/navigation";
 
 export interface Store {
   name: string;
@@ -38,21 +38,22 @@ export default async function OrderPage({
 }: {
   params: { storeSlug: string };
 }) {
-  // const store: Store | void = await api.store
-  //   .getStoreMenus({
-  //     storeSlug: "test",
-  //   })
-  //   .catch((err: TRPCError) => {
-  //     if (err.code === "NOT_FOUND") {
-  //       redirect("/not-found");
-  //     }
-  //     redirect("/error");
-  //   });
+  console.log({ params });
+  const store: Store | void = await api.store
+    .getStoreMenus({
+      storeSlug: "test",
+    })
+    .catch((err: TRPCError) => {
+      if (err.code === "NOT_FOUND") {
+        redirect("/not-found");
+      }
+      redirect("/error");
+    });
 
-  // if (!store) {
-  //   redirect("/error");
-  //   return null;
-  // }
+  if (!store) {
+    redirect("/error");
+    return null;
+  }
 
   return (
     <HydrateClient>
