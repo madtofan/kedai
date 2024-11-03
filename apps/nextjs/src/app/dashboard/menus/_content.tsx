@@ -2,7 +2,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -29,15 +29,16 @@ import {
   FormControl,
   FormMessage,
 } from "~/components/ui/form";
+import Image from "next/image";
 import { api } from "~/trpc/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   menuGroupId: z.coerce.number().positive(),
   name: z.string().min(1).max(256),
   description: z.string().max(256).optional(),
-  image: z.string().url().max(256).optional(),
+  image: z.instanceof(File).optional(),
   sale: z.coerce.number(),
   cost: z.coerce.number(),
 });
@@ -62,6 +63,7 @@ export default function DashboardMenuPageContent() {
     api.menuGroup.getAllMenuGroup.useQuery();
   const { data: organizationMenus, error: menuError } =
     api.menu.getMenu.useQuery();
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -112,7 +114,7 @@ export default function DashboardMenuPageContent() {
     <>
       <div className="mb-6 rounded-lg bg-sidebar p-6 shadow">
         <h2 className="mb-4 text-lg font-semibold">Add New Menu Item</h2>
-        <div className="">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* className="grid grid-cols-1 gap-4 md:grid-cols-2" */}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
@@ -124,6 +126,58 @@ export default function DashboardMenuPageContent() {
                     <FormLabel>Name</FormLabel>
                     <FormControl>
                       <Input {...field} className="bg-background" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <FormLabel>Image</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-col items-center gap-4">
+                        {imagePreview && (
+                          <div className="relative h-16 w-16 overflow-hidden rounded-sm">
+                            <Image
+                              src={imagePreview}
+                              alt="Profile preview"
+                              fill
+                              style={{ objectFit: "cover" }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex w-full items-center gap-2">
+                          <Input
+                            id="image"
+                            type="file"
+                            accept="image/*"
+                            className="w-full"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                form.setValue("image", file);
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  setImagePreview(reader.result as string);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                          {field.value && (
+                            <X
+                              className="cursor-pointer"
+                              onClick={() => {
+                                form.setValue("image", undefined);
+                                setImagePreview(null);
+                              }}
+                            />
+                          )}
+                        </div>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

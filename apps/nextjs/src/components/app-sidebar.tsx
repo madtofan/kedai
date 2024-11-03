@@ -22,7 +22,7 @@ import {
 } from "~/components/ui/sidebar";
 import { type RouterOutput } from "~/trpc/server";
 import { useMemo } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { NavUser } from "./nav-user";
 
 const data = {
   navMain: [
@@ -84,9 +84,11 @@ const data = {
 
 export function AppSidebar({
   stores,
+  userDetails,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   stores: RouterOutput["store"]["getAllStore"];
+  userDetails: RouterOutput["user"]["getCurrentUser"];
 }) {
   const navStores = useMemo(
     () =>
@@ -123,7 +125,7 @@ export function AppSidebar({
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <UserButton showName={true} />
+        <NavUser user={userDetails} />
       </SidebarFooter>
     </Sidebar>
   );

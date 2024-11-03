@@ -1,11 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, organizationProcedure } from "../trpc";
-import {
-  organizationRoles,
-  organizations,
-  rolesToPermissions,
-} from "../../db/schema";
-import { and, eq, getTableColumns, inArray } from "drizzle-orm";
+import { permissionGroups, groupsToPermissions } from "../../db/schema";
+import { and, count, eq, getTableColumns, inArray } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 const roleRouter = createTRPCRouter({
@@ -14,23 +10,23 @@ const roleRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       if (input.isDefault) {
         await ctx.db
-          .update(organizationRoles)
+          .update(permissionGroups)
           .set({
             isDefault: false,
           })
           .where(
             and(
-              eq(organizationRoles.organizationId, ctx.organizationId),
-              eq(organizationRoles.isDefault, true),
+              eq(permissionGroups.organizationId, ctx.organizationId),
+              eq(permissionGroups.isDefault, true),
             ),
           );
       }
 
       const { organizationId: _organizationId, ...columns } =
-        getTableColumns(organizationRoles);
+        getTableColumns(permissionGroups);
       const createdRole = (
         await ctx.db
-          .insert(organizationRoles)
+          .insert(permissionGroups)
           .values({
             name: input.name,
             isAdmin: false,
@@ -50,13 +46,42 @@ const roleRouter = createTRPCRouter({
       return createdRole;
     }),
 
-  deleteRole: organizationProcedure
+  deletePermissionGroups: organizationProcedure
     .input(z.object({ id: z.number().int() }))
     .mutation(async ({ ctx, input }) => {
+      const toBeDeletedPermissionGroup =
+        await ctx.db.query.permissionGroups.findFirst({
+          where: (permissionGroup, { eq }) => eq(permissionGroup.id, input.id),
+          columns: {
+            isAdmin: true,
+          },
+        });
+
+      if (toBeDeletedPermissionGroup?.isAdmin) {
+        const permissionGroupsCount = (
+          await ctx.db
+            .select({ count: count() })
+            .from(permissionGroups)
+            .where(
+              and(
+                eq(permissionGroups.organizationId, ctx.organizationId),
+                eq(permissionGroups.isAdmin, true),
+              ),
+            )
+        ).find(Boolean);
+
+        if (!permissionGroupsCount || permissionGroupsCount.count === 1) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Organization need to have at least 1 administrator",
+          });
+        }
+      }
+
       const deletedRole = await ctx.db
-        .delete(organizationRoles)
-        .where(eq(organizationRoles.id, input.id))
-        .returning({ id: organizationRoles.id });
+        .delete(permissionGroups)
+        .where(eq(permissionGroups.id, input.id))
+        .returning({ id: permissionGroups.id });
       if (!deletedRole) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -74,8 +99,9 @@ const roleRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const roleToEdit = await ctx.db.query.organizationRoles.findFirst({
-        where: (role, { eq }) => eq(organizationRoles.id, input.roleId),
+      const roleToEdit = await ctx.db.query.permissionGroups.findFirst({
+        where: (permissionGroup, { eq }) =>
+          eq(permissionGroup.id, input.roleId),
         columns: {
           organizationId: true,
         },
@@ -88,13 +114,13 @@ const roleRouter = createTRPCRouter({
       }
 
       const valuesToAdd = input.permissionsId.map((permissionId) => ({
-        organizationRoleId: input.roleId,
+        permissionGroupId: input.roleId,
         permissionId,
       }));
       const addedPermissions = await ctx.db
-        .insert(rolesToPermissions)
+        .insert(groupsToPermissions)
         .values(valuesToAdd)
-        .returning({ id: rolesToPermissions.id });
+        .returning({ id: groupsToPermissions.id });
 
       if (addedPermissions.length !== input.permissionsId.length) {
         throw new TRPCError({
@@ -113,8 +139,9 @@ const roleRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const roleToEdit = await ctx.db.query.organizationRoles.findFirst({
-        where: (role, { eq }) => eq(organizationRoles.id, input.roleId),
+      const roleToEdit = await ctx.db.query.permissionGroups.findFirst({
+        where: (permissionGroup, { eq }) =>
+          eq(permissionGroup.id, input.roleId),
         columns: {
           organizationId: true,
         },
@@ -127,14 +154,14 @@ const roleRouter = createTRPCRouter({
       }
 
       const removedPermissions = await ctx.db
-        .delete(organizationRoles)
+        .delete(permissionGroups)
         .where(
           and(
-            eq(rolesToPermissions.organizationRoleId, input.roleId),
-            inArray(rolesToPermissions.permissionId, input.permissionsId),
+            eq(groupsToPermissions.permissionGroupId, input.roleId),
+            inArray(groupsToPermissions.permissionId, input.permissionsId),
           ),
         )
-        .returning({ id: organizations.id });
+        .returning({ id: permissionGroups.id });
       if (removedPermissions.length !== input.permissionsId.length) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -144,32 +171,27 @@ const roleRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  getRoles: organizationProcedure.query(async ({ ctx }) => {
-    const organizationRoles = await ctx.db.query.organizationRoles.findMany({
-      columns: { organizationId: false },
-      where: (role, { eq }) => eq(role.organizationId, ctx.organizationId),
-      with: {
-        permissions: {
-          columns: { createdAt: true },
-          with: {
-            permission: {
-              columns: {
-                name: false,
-                createdAt: false,
-                updatedAt: false,
+  getPermissionGroups: organizationProcedure.query(async ({ ctx }) => {
+    const organisationPermissionGroups =
+      await ctx.db.query.permissionGroups.findMany({
+        columns: { organizationId: false },
+        where: (role, { eq }) => eq(role.organizationId, ctx.organizationId),
+        with: {
+          permissions: {
+            columns: { createdAt: true },
+            with: {
+              permission: {
+                columns: {
+                  name: false,
+                  createdAt: false,
+                  updatedAt: false,
+                },
               },
             },
           },
         },
-      },
-    });
-    if (organizationRoles.length === 0) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Unable to retrieve organization.",
       });
-    }
-    return organizationRoles;
+    return organisationPermissionGroups;
   }),
 });
 

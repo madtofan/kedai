@@ -34,9 +34,10 @@ export default function DashboardOrganizationContent() {
 
   const users = useMemo(() => {
     return (
-      organization?.organizationRoles.flatMap((role) =>
-        role.users.map((user) => ({ ...user, role: role.name })),
-      ) ?? []
+      organization?.members.map((member) => ({
+        ...member.user,
+        role: member.roles.map((role) => role.permissionGroup.name).join(", "),
+      })) ?? []
     );
   }, [organization]);
 
@@ -64,7 +65,7 @@ export default function DashboardOrganizationContent() {
       });
   };
 
-  const handleDeleteUser = (userId: number) => {
+  const handleDeleteUser = (userId: string) => {
     deleteUser({ userId })
       .then(() => {
         toast({
@@ -159,9 +160,9 @@ export default function DashboardOrganizationContent() {
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.userEmail}</TableCell>
-                <TableCell>{user.fullName}</TableCell>
-                <TableCell>${user.role}</TableCell>
+                <TableCell className="font-medium">{user.email}</TableCell>
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.role}</TableCell>
                 <TableCell>
                   <ConfirmationDialog
                     title="Confirm user removal?"

@@ -29,10 +29,19 @@ export default async function DashboardLayout({
     }
     redirect("/error");
   });
+  const userDetails = await api.user
+    .getCurrentUser()
+    .catch((err: TRPCError) => {
+      console.log({ err });
+      if (err.code === "FORBIDDEN") {
+        redirect("/no-organization");
+      }
+      redirect("/error");
+    });
 
   return (
     <SidebarProvider>
-      <AppSidebar stores={stores} />
+      <AppSidebar stores={stores} userDetails={userDetails} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">

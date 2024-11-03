@@ -18,6 +18,7 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Spinner } from "~/components/ui/spinner";
+import { client } from "~/lib/auth-client";
 
 export default function NoOrganization() {
   const [organizationName, setOrganizationName] = useState("");
@@ -96,22 +97,23 @@ function InvitationCard() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const { data: invitations } = api.user.checkForInvitation.useQuery();
+  const { data: invitations } = api.user.getAllInvitations.useQuery();
 
   const { data: userInformation } = api.user.getCurrentUser.useQuery();
 
-  const { mutateAsync: acceptInvitation } = api.user.acceptInvite.useMutation();
+  const { mutateAsync: acceptInvitation } =
+    api.user.acceptInvitation.useMutation();
 
   const { mutateAsync: declineInvitation } =
-    api.user.declineInvite.useMutation();
+    api.user.declineInvitation.useMutation();
 
   useEffect(() => {
-    if (userInformation?.organizationRole) {
+    if (userInformation?.activeOrganizationId) {
       router.replace("/dashboard");
     }
   }, [router, userInformation?.organizationRole]);
 
-  const handleAcceptInvitation = (invitationId: number) => {
+  const handleAcceptInvitation = (invitationId: string) => {
     acceptInvitation({
       invitationId,
     })

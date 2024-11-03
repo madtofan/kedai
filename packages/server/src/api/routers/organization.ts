@@ -6,14 +6,13 @@ import {
 } from "../trpc";
 import {
   menuGroups,
-  organizationRoles,
-  organizations,
+  permissionGroups,
   stores,
-  users,
+  memberToPermissionGroups,
 } from "../../db/schema";
-import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import slug from "slug";
+import { auth } from "../../auth";
 
 const organizationRouter = createTRPCRouter({
   createOrganization: protectedProcedure
@@ -24,7 +23,7 @@ const organizationRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (ctx.user?.organizationRole?.organizationId || !ctx.user?.clerkId) {
+      if (ctx.session.activeOrganizationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message:
@@ -32,12 +31,13 @@ const organizationRouter = createTRPCRouter({
         });
       }
 
-      const createdOrganization = (
-        await ctx.db
-          .insert(organizations)
-          .values({ name: input.organizationName })
-          .returning()
-      ).find(Boolean);
+      const createdOrganization = await auth.api.createOrganization({
+        headers: ctx.headers,
+        body: {
+          name: input.organizationName,
+          slug: slug(input.organizationName),
+        },
+      });
 
       if (!createdOrganization) {
         throw new TRPCError({
@@ -46,23 +46,37 @@ const organizationRouter = createTRPCRouter({
         });
       }
 
-      const createdOrganizationRole = (
+      const adminRole = (
         await ctx.db
-          .insert(organizationRoles)
+          .insert(permissionGroups)
           .values({
             name: "admin",
             isAdmin: true,
             organizationId: createdOrganization.id,
           })
-          .returning({ id: organizationRoles.id })
+          .returning({ id: permissionGroups.id })
       ).find(Boolean);
 
-      if (!createdOrganizationRole) {
+      if (!adminRole) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to create organization role",
         });
       }
+
+      const addedMember = createdOrganization.members.find(Boolean);
+
+      if (!addedMember) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to add self to organization.",
+        });
+      }
+
+      await ctx.db.insert(memberToPermissionGroups).values({
+        memberId: addedMember.id,
+        permissionGroupId: adminRole.id,
+      });
 
       await ctx.db.insert(stores).values({
         organizationId: createdOrganization.id,
@@ -70,7 +84,7 @@ const organizationRouter = createTRPCRouter({
         slug: slug(input.storeName),
       });
 
-      await ctx.db.insert(organizationRoles).values({
+      await ctx.db.insert(permissionGroups).values({
         name: "member",
         organizationId: createdOrganization.id,
         isDefault: true,
@@ -87,22 +101,17 @@ const organizationRouter = createTRPCRouter({
         },
       ]);
 
-      await ctx.db
-        .update(users)
-        .set({
-          organizationRoleId: createdOrganizationRole.id,
-        })
-        .where(eq(users.clerkId, ctx.user.clerkId));
-
       const { id: _id, ...response } = createdOrganization;
       return response;
     }),
 
   deleteOrganization: organizationProcedure.mutation(async ({ ctx }) => {
-    const deletedOrganization = await ctx.db
-      .delete(organizations)
-      .where(eq(organizations.id, ctx.organizationId))
-      .returning({ id: organizations.id });
+    const deletedOrganization = await auth.api.deleteOrganization({
+      headers: ctx.headers,
+      body: {
+        orgId: ctx.organizationId,
+      },
+    });
     if (!deletedOrganization) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
@@ -113,32 +122,68 @@ const organizationRouter = createTRPCRouter({
   }),
 
   getOrganization: organizationProcedure.query(async ({ ctx }) => {
-    const organization = await ctx.db.query.organizations.findFirst({
+    const userOrganization = await ctx.db.query.organization.findFirst({
       columns: { id: false },
-      where: (organization, { eq }) => eq(organization.id, ctx.organizationId),
+      where: (org, { eq }) => eq(org.id, ctx.organizationId),
       with: {
-        organizationRoles: {
-          columns: { organizationId: false },
+        members: {
+          columns: {
+            email: true,
+          },
           with: {
-            users: {
+            user: {
               columns: {
-                organizationRoleId: false,
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+              },
+            },
+            roles: {
+              columns: {
+                id: false,
+                memberId: false,
+                permissionGroupId: false,
                 createdAt: false,
                 updatedAt: false,
-                clerkId: false,
+              },
+              with: {
+                permissionGroup: {
+                  columns: {
+                    name: true,
+                  },
+                  with: {
+                    permissions: {
+                      columns: {
+                        id: false,
+                        permissionGroupId: false,
+                        permissionId: false,
+                        createdAt: false,
+                        updatedAt: false,
+                      },
+                      with: {
+                        permission: {
+                          columns: {
+                            displayName: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
               },
             },
           },
         },
       },
     });
-    if (!organization) {
+    if (!userOrganization) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Unable to retrieve organization.",
       });
     }
-    return organization;
+    return userOrganization;
   }),
 });
 

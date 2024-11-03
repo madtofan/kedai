@@ -3,8 +3,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "../db";
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { users } from "../db/schema";
+import { auth } from "../auth";
 
 /**
  * 1. CONTEXT
@@ -105,61 +104,16 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  * This guarantees that the user has logged in, and the userId can be obtained from ctx.user.userId
  */
 export const protectedProcedure = publicProcedure.use(async (opts) => {
-  const clerkUser = auth();
-  if (!clerkUser.userId) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-  let user = await opts.ctx.db.query.users.findFirst({
-    where: (user, { eq }) => eq(user.clerkId, clerkUser.userId),
-    columns: {
-      organizationRoleId: false,
-      createdAt: false,
-      updatedAt: false,
-    },
-    with: {
-      organizationRole: {
-        columns: {
-          isAdmin: true,
-          organizationId: true,
-        },
-        with: {
-          permissions: {
-            columns: {
-              id: false,
-              organizationRoleId: false,
-              permissionId: false,
-              createdAt: false,
-              updatedAt: false,
-            },
-            with: {
-              permission: {
-                columns: {
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+  const clientSession = await auth.api.getSession({
+    headers: opts.ctx.headers,
   });
-  if (!user) {
-    const userDetail = await clerkClient.users.getUser(clerkUser.userId);
-    const createdUsers = await opts.ctx.db.insert(users).values({
-      firstName: userDetail.firstName,
-      lastName: userDetail.lastName,
-      userEmail: userDetail.primaryEmailAddress!.emailAddress,
-      fullName: userDetail.fullName,
-      clerkId: clerkUser.userId,
-      enabled: false,
-    });
-    if (createdUsers.length > 0 && createdUsers[0]) {
-      user = createdUsers[0];
-    }
+  if (!clientSession?.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return opts.next({
     ctx: {
-      user,
+      session: clientSession.session,
+      user: clientSession.user,
     },
   });
 });
@@ -171,13 +125,43 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
  */
 export const organizationProcedure = protectedProcedure.use(async (opts) => {
   console.log({ path: opts.path });
-  if (!opts.ctx.user?.organizationRole?.organizationId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "User must be in an existing to perform this operation.",
+  let organizationId = opts.ctx.session.activeOrganizationId;
+  if (!organizationId) {
+    organizationId = (
+      await opts.ctx.db.query.user.findFirst({
+        where: (usr, { eq }) => eq(usr.id, opts.ctx.user.id),
+        columns: {
+          id: false,
+          name: false,
+          email: false,
+          emailVerified: false,
+          image: false,
+          createdAt: false,
+          updatedAt: false,
+        },
+        with: {
+          members: {
+            columns: {
+              organizationId: true,
+            },
+          },
+        },
+      })
+    )?.members.find(Boolean)?.organizationId;
+    if (!organizationId) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "User must be in an existing to perform this operation.",
+      });
+    }
+
+    await auth.api.setActiveOrganization({
+      headers: opts.ctx.headers,
+      body: {
+        orgId: organizationId,
+      },
     });
   }
-  const organizationId = opts.ctx.user.organizationRole.organizationId;
   return opts.next({
     ctx: {
       organizationId,

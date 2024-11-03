@@ -8,78 +8,197 @@ import {
   serial,
   timestamp,
   varchar,
+  pgTable,
+  text,
 } from "drizzle-orm/pg-core";
 
-export const createTable = pgTableCreator((name) => `k_${name}`);
+// Auth tables
+export const user = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("emailVerified").notNull(),
+  image: text("image"),
+  createdAt: timestamp("createdAt").notNull(),
+  updatedAt: timestamp("updatedAt").notNull(),
+});
+export const userRelations = relations(user, ({ many }) => ({
+  invites: many(invitation),
+  members: many(member),
+  sessions: many(session),
+  accounts: many(account),
+}));
 
-// Tables and Relations
-export const organizations = createTable(
-  "organizations",
-  {
-    id: serial("id").primaryKey(),
-    name: varchar("name", { length: 256 }).notNull().unique(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (example) => ({
-    nameIndex: index("organization_name_idx").on(example.name),
+export const session = pgTable("session", {
+  id: text("id").primaryKey(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  ipAddress: text("ipAddress"),
+  userAgent: text("userAgent"),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  activeOrganizationId: text("activeOrganizationId"),
+});
+export const sessionRelations = relations(session, ({ one }) => ({
+  user: one(user, {
+    fields: [session.userId],
+    references: [user.id],
   }),
-);
-export const organizationsRelation = relations(organizations, ({ many }) => ({
-  invites: many(invites),
-  organizationRoles: many(organizationRoles),
+}));
+
+export const account = pgTable("account", {
+  id: text("id").primaryKey(),
+  accountId: text("accountId").notNull(),
+  providerId: text("providerId").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  accessToken: text("accessToken"),
+  refreshToken: text("refreshToken"),
+  idToken: text("idToken"),
+  expiresAt: timestamp("expiresAt"),
+  password: text("password"),
+});
+export const accountRelations = relations(account, ({ one }) => ({
+  user: one(user, {
+    fields: [account.userId],
+    references: [user.id],
+  }),
+}));
+
+export const verification = pgTable("verification", {
+  id: text("id").primaryKey(),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+});
+
+export const passkey = pgTable("passkey", {
+  id: text("id").primaryKey(),
+  name: text("name"),
+  publicKey: text("publicKey").notNull(),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  webauthnUserID: text("webauthnUserID").notNull(),
+  counter: integer("counter").notNull(),
+  deviceType: text("deviceType").notNull(),
+  backedUp: boolean("backedUp").notNull(),
+  transports: text("transports"),
+  createdAt: timestamp("createdAt"),
+});
+
+export const organization = pgTable("organization", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").unique(),
+  logo: text("logo"),
+  createdAt: timestamp("createdAt").notNull(),
+  metadata: text("metadata"),
+});
+export const organizationRelations = relations(organization, ({ many }) => ({
+  invitations: many(invitation),
+  permissionGroups: many(permissionGroups),
   stores: many(stores),
   menuGroups: many(menuGroups),
+  members: many(member),
 }));
 
-export const invites = createTable(
-  "invites",
-  {
-    id: serial("id").primaryKey(),
-    email: varchar("email", { length: 256 }).notNull().unique(),
-    createdBy: integer("user_id")
-      .references(() => users.id, { onDelete: "cascade" })
-      .notNull(),
-    organizationId: integer("organization_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
-      .notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (example) => ({
-    organizationIndex: index("invite_organization_idx").on(
-      example.organizationId,
-    ),
+export const member = pgTable("member", {
+  id: text("id").primaryKey(),
+  organizationId: text("organizationId")
+    .notNull()
+    .references(() => organization.id),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id),
+  email: text("email").notNull(),
+  role: text("role").notNull(),
+  createdAt: timestamp("createdAt").notNull(),
+});
+export const memberRelations = relations(member, ({ one, many }) => ({
+  user: one(user, {
+    fields: [member.userId],
+    references: [user.id],
+  }),
+  organization: one(organization, {
+    fields: [member.organizationId],
+    references: [organization.id],
+  }),
+  roles: many(memberToPermissionGroups),
+}));
+
+export const invitation = pgTable("invitation", {
+  id: text("id").primaryKey(),
+  organizationId: text("organizationId")
+    .notNull()
+    .references(() => organization.id),
+  email: text("email").notNull(),
+  role: text("role"),
+  status: text("status").notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  inviterId: text("inviterId")
+    .notNull()
+    .references(() => user.id),
+});
+export const invitationRelations = relations(invitation, ({ one }) => ({
+  organization: one(organization, {
+    fields: [invitation.organizationId],
+    references: [organization.id],
+  }),
+  inviter: one(user, {
+    fields: [invitation.inviterId],
+    references: [user.id],
+  }),
+}));
+
+// Custom table creations
+export const createTable = pgTableCreator((name) => name);
+
+// Tables and Relations
+export const memberToPermissionGroups = createTable("member_to_perms_groups", {
+  id: serial("id").primaryKey(),
+  memberId: text("member_id")
+    .references(() => member.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  permissionGroupId: integer("perms_group_id")
+    .references(() => permissionGroups.id, {
+      onDelete: "cascade",
+    })
+    .notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+    () => new Date(),
+  ),
+});
+export const memberToPermissionGroupsRelations = relations(
+  memberToPermissionGroups,
+  ({ one }) => ({
+    member: one(member, {
+      fields: [memberToPermissionGroups.memberId],
+      references: [member.id],
+    }),
+    permissionGroup: one(permissionGroups, {
+      fields: [memberToPermissionGroups.permissionGroupId],
+      references: [permissionGroups.id],
+    }),
   }),
 );
-export const invitesRelations = relations(invites, ({ one }) => ({
-  createdBy: one(users, {
-    fields: [invites.createdBy],
-    references: [users.id],
-  }),
-  organization: one(organizations, {
-    fields: [invites.organizationId],
-    references: [organizations.id],
-  }),
-}));
 
-export const organizationRoles = createTable(
-  "organization_roles",
+export const permissionGroups = createTable(
+  "permission_groups",
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     isAdmin: boolean("is_admin").default(false),
     isDefault: boolean("is_default").default(false),
-    organizationId: integer("organization_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
+    identifier: varchar("identifier", { length: 256 }),
+    organizationId: text("organization_id")
+      .references(() => organization.id, { onDelete: "cascade" })
       .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -94,15 +213,15 @@ export const organizationRoles = createTable(
     ),
   }),
 );
-export const organizationRolesRelations = relations(
-  organizationRoles,
+export const permissionGroupsRelations = relations(
+  permissionGroups,
   ({ one, many }) => ({
-    organization: one(organizations, {
-      fields: [organizationRoles.organizationId],
-      references: [organizations.id],
+    organization: one(organization, {
+      fields: [permissionGroups.organizationId],
+      references: [organization.id],
     }),
-    users: many(users),
-    permissions: many(rolesToPermissions),
+    member: many(memberToPermissionGroups),
+    permissions: many(groupsToPermissions),
   }),
 );
 
@@ -118,13 +237,13 @@ export const permissions = createTable("permissions", {
   ),
 });
 export const permissionsRelations = relations(permissions, ({ many }) => ({
-  organizationRoles: many(rolesToPermissions),
+  permissionGroups: many(groupsToPermissions),
 }));
 
-export const rolesToPermissions = createTable("roles_to_perms", {
+export const groupsToPermissions = createTable("roles_to_perms", {
   id: serial("id").primaryKey(),
-  organizationRoleId: integer("org_role_id")
-    .references(() => organizationRoles.id, {
+  permissionGroupId: integer("org_role_id")
+    .references(() => permissionGroups.id, {
       onDelete: "cascade",
       onUpdate: "cascade",
     })
@@ -143,54 +262,18 @@ export const rolesToPermissions = createTable("roles_to_perms", {
   ),
 });
 export const rolesToPermissionsRelations = relations(
-  rolesToPermissions,
+  groupsToPermissions,
   ({ one }) => ({
-    organizationRole: one(organizationRoles, {
-      fields: [rolesToPermissions.organizationRoleId],
-      references: [organizationRoles.id],
+    permissionGroup: one(permissionGroups, {
+      fields: [groupsToPermissions.permissionGroupId],
+      references: [permissionGroups.id],
     }),
     permission: one(permissions, {
-      fields: [rolesToPermissions.permissionId],
+      fields: [groupsToPermissions.permissionId],
       references: [permissions.id],
     }),
   }),
 );
-
-export const users = createTable(
-  "users",
-  {
-    id: serial("id").primaryKey(),
-    clerkId: varchar("clerk_id", { length: 256 }).notNull(),
-    enabled: boolean("enabled"),
-    userEmail: varchar("user_email", { length: 256 }),
-    firstName: varchar("first_name", { length: 256 }),
-    lastName: varchar("last_name", { length: 256 }),
-    fullName: varchar("full_name", { length: 256 }),
-    organizationRoleId: integer("organization_role_id").references(
-      () => organizationRoles.id,
-      { onDelete: "set null" },
-    ),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
-      () => new Date(),
-    ),
-  },
-  (example) => ({
-    nameIndex: index("clerk_idx").on(example.clerkId),
-    organizationRoleIndex: index("user_organization_role_idx").on(
-      example.organizationRoleId,
-    ),
-  }),
-);
-export const usersRelations = relations(users, ({ one, many }) => ({
-  organizationRole: one(organizationRoles, {
-    fields: [users.organizationRoleId],
-    references: [organizationRoles.id],
-  }),
-  invites: many(invites),
-}));
 
 export const stores = createTable(
   "stores",
@@ -199,8 +282,8 @@ export const stores = createTable(
     name: varchar("name", { length: 256 }).notNull(),
     isOpen: boolean("is_open").default(false),
     slug: varchar("slug", { length: 256 }).notNull().unique(),
-    organizationId: integer("organization_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
+    organizationId: text("organization_id")
+      .references(() => organization.id, { onDelete: "cascade" })
       .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -216,9 +299,9 @@ export const stores = createTable(
   }),
 );
 export const storesRelations = relations(stores, ({ one, many }) => ({
-  organization: one(organizations, {
+  organization: one(organization, {
     fields: [stores.organizationId],
-    references: [organizations.id],
+    references: [organization.id],
   }),
   orders: many(orders),
   storeMenus: many(storeMenus),
@@ -229,8 +312,8 @@ export const menuGroups = createTable(
   {
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
-    organizationId: integer("organization_id")
-      .references(() => organizations.id, { onDelete: "cascade" })
+    organizationId: text("organization_id")
+      .references(() => organization.id, { onDelete: "cascade" })
       .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
@@ -246,9 +329,9 @@ export const menuGroups = createTable(
   }),
 );
 export const menuGroupsRelations = relations(menuGroups, ({ one, many }) => ({
-  organization: one(organizations, {
+  organization: one(organization, {
     fields: [menuGroups.organizationId],
-    references: [organizations.id],
+    references: [organization.id],
   }),
   menus: many(menus),
 }));

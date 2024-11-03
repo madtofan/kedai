@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/card";
 import { Check, CreditCard, BarChart, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton } from "~/components/sign-in-button";
 
 export default async function HomeContent() {
   return (
@@ -39,7 +39,7 @@ export default async function HomeContent() {
           Contact
         </Link>
         <nav className="ml-auto flex">
-          <SignInButton forceRedirectUrl="/dashboard" />
+          <SignInButton />
         </nav>
       </header>
       <main className="flex-1">
