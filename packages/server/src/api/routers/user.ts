@@ -53,11 +53,27 @@ const userRouter = createTRPCRouter({
 
   getAllInvitations: protectedProcedure.query(async ({ ctx }) => {
     const invites = await ctx.db.query.invitation.findMany({
+      columns: {
+        organizationId: false,
+        inviterId: false,
+      },
       where: (invitation, { eq, and }) =>
         and(
           eq(invitation.email, ctx.user.email),
           eq(invitation.status, "pending"),
         ),
+      with: {
+        organization: {
+          columns: {
+            name: true,
+          },
+        },
+        inviter: {
+          columns: {
+            name: true,
+          },
+        },
+      },
     });
     return invites;
   }),

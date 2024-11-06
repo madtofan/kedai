@@ -18,7 +18,6 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Spinner } from "~/components/ui/spinner";
-import { client } from "~/lib/auth-client";
 
 export default function NoOrganization() {
   const [organizationName, setOrganizationName] = useState("");
@@ -111,7 +110,7 @@ function InvitationCard() {
     if (userInformation?.activeOrganizationId) {
       router.replace("/dashboard");
     }
-  }, [router, userInformation?.organizationRole]);
+  }, [router, userInformation?.activeOrganizationId]);
 
   const handleAcceptInvitation = (invitationId: string) => {
     acceptInvitation({
@@ -133,7 +132,7 @@ function InvitationCard() {
       });
   };
 
-  const handleDeclineInvitation = (invitationId: number) => {
+  const handleDeclineInvitation = (invitationId: string) => {
     declineInvitation({
       invitationId,
     })
@@ -166,7 +165,7 @@ function InvitationCard() {
               <CardHeader>
                 <CardTitle>{invitation.organization.name}</CardTitle>
                 <CardDescription>
-                  Invited by {invitation.createdBy.fullName}
+                  Invited by {invitation.inviter.name}
                 </CardDescription>
               </CardHeader>
               <CardFooter className="flex justify-end space-x-2">
