@@ -33,6 +33,8 @@ import Image from "next/image";
 import { api } from "~/trpc/react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "~/lib/use-toast";
+import { TRPCError } from "@trpc/server";
 
 const formSchema = z.object({
   menuGroupId: z.coerce.number().positive(),
@@ -59,10 +61,16 @@ interface Menu {
 
 export default function DashboardMenuPageContent() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [resetKey, setResetKey] = useState(true);
+  const [resetImage, setResetImage] = useState(true);
   const { data: selectOptions, error: menuGroupError } =
     api.menuGroup.getAllMenuGroup.useQuery();
-  const { data: organizationMenus, error: menuError } =
-    api.menu.getMenu.useQuery();
+  const {
+    data: organizationMenus,
+    error: menuError,
+    refetch: refetchMenus,
+  } = api.menu.getMenu.useQuery();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +81,10 @@ export default function DashboardMenuPageContent() {
       router.push("/dashboard/organization");
     }
   }, [menuError?.data?.code, menuGroupError?.data?.code, router]);
+
+  const { mutateAsync: addMenu } = api.menu.addMenu.useMutation();
+
+  const { mutateAsync: deleteMenu } = api.menu.deleteMenu.useMutation();
 
   const menuItems: Menu[] = useMemo(() => {
     if (!organizationMenus) {
@@ -95,19 +107,59 @@ export default function DashboardMenuPageContent() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      menuGroupId: 0,
+      menuGroupId: undefined,
       name: "",
+      description: undefined,
+      image: undefined,
       sale: 0.0,
       cost: 0.0,
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log({ values });
+    addMenu({
+      menuGroupId: values.menuGroupId,
+      name: values.name,
+      description: values.description,
+      sale: `${values.sale}`,
+      cost: `${values.cost}`,
+    })
+      .then(async () => {
+        toast({
+          title: "Success!",
+          description: `You have successfully added a new menu ${values.name}.`,
+        });
+        form.reset();
+        setResetKey((prev) => !prev);
+        await refetchMenus();
+      })
+      .catch((error: TRPCError) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
   };
 
   const onDeleteItem = (menuId: number) => {
-    console.log({ menuId });
+    deleteMenu({
+      id: menuId,
+    })
+      .then(async () => {
+        toast({
+          title: "Removed menu",
+          description: "You have successfully removed the menu.",
+        });
+        await refetchMenus();
+      })
+      .catch((error: TRPCError) => {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      });
   };
 
   return (
@@ -125,7 +177,11 @@ export default function DashboardMenuPageContent() {
                   <FormItem className="space-y-0">
                     <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input {...field} className="bg-background" />
+                      <Input
+                        {...field}
+                        className="bg-background"
+                        key={`${resetKey}`}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -154,6 +210,7 @@ export default function DashboardMenuPageContent() {
                             id="image"
                             type="file"
                             accept="image/*"
+                            key={`${resetKey}_${resetImage}`}
                             className="w-full"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
@@ -173,6 +230,7 @@ export default function DashboardMenuPageContent() {
                               onClick={() => {
                                 form.setValue("image", undefined);
                                 setImagePreview(null);
+                                setResetImage((prev) => !prev);
                               }}
                             />
                           )}
@@ -193,6 +251,7 @@ export default function DashboardMenuPageContent() {
                       <Input
                         {...field}
                         className="bg-background"
+                        key={`${resetKey}`}
                         type="number"
                         step={0.01}
                       />
@@ -211,6 +270,7 @@ export default function DashboardMenuPageContent() {
                       <Input
                         {...field}
                         className="bg-background"
+                        key={`${resetKey}`}
                         type="number"
                         step={0.01}
                       />
@@ -228,6 +288,7 @@ export default function DashboardMenuPageContent() {
                     <FormControl>
                       <Textarea
                         className="resize-none bg-background"
+                        key={`${resetKey}`}
                         {...field}
                       />
                     </FormControl>
@@ -241,10 +302,7 @@ export default function DashboardMenuPageContent() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Menu Group</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={`${field.value}`}
-                    >
+                    <Select onValueChange={field.onChange} key={`${resetKey}`}>
                       <FormControl>
                         <SelectTrigger className="bg-background">
                           <SelectValue placeholder="Select a group for this menu" />

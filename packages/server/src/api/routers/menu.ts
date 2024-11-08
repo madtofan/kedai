@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, organizationProcedure } from "../trpc";
-import { menuDetails, menus, menuToMenuDetails, stores } from "../../db/schema";
+import { menuDetails, menus, menuToMenuDetails } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -188,8 +188,8 @@ const menuRouter = createTRPCRouter({
 
       const deletedMenu = await ctx.db
         .delete(menus)
-        .where(eq(stores.id, input.id))
-        .returning({ id: stores.id });
+        .where(eq(menus.id, input.id))
+        .returning({ id: menus.id });
       if (!deletedMenu) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
