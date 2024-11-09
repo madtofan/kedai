@@ -27,7 +27,7 @@ const SignInWithOAuth = () => {
     try {
       const { createdSessionId, signIn, signUp, setActive } =
         await startOAuthFlow({
-          redirectUrl: Linking.createURL("/dashboard", { scheme: "myapp" }),
+          redirectUrl: Linking.createURL("/dashboard", { scheme: "kedai" }),
         });
 
       if (createdSessionId) {

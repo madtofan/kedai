@@ -12,11 +12,14 @@
         ".env"
       ],
       "env": [
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_ID",
+        "CLOUDFLARE_ACCESS_SECRET",
+        "CLOUDFLARE_R2_BUCKET_NAME",
         "DATABASE_URL",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
         "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
         "CLERK_SECRET_KEY",
-        "GOOGLE_AUTH_ID",
+        "NEXT_PUBLIC_GOOGLE_AUTH_ID",
         "GOOGLE_AUTH_SECRET",
         "NEXT_PUBLIC_BETTER_AUTH_URL",
         "BETTER_AUTH_SECRET"
@@ -33,11 +36,15 @@
         ".env"
       ],
       "env": [
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_ID",
+        "CLOUDFLARE_ACCESS_SECRET",
+        "CLOUDFLARE_R2_BUCKET_NAME",
         "DATABASE_URL",
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
         "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
         "CLERK_SECRET_KEY",
-        "GOOGLE_AUTH_ID",
+        "NEXT_PUBLIC_GOOGLE_AUTH_ID",
         "GOOGLE_AUTH_SECRET",
         "NEXT_PUBLIC_BETTER_AUTH_URL",
         "BETTER_AUTH_SECRET"
@@ -55,7 +62,15 @@
         ".env.development",
         ".env"
       ],
-      "env": ["DATABASE_URL"]
+      "env": [
+        "BETTER_AUTH_SECRET",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_ACCESS_ID",
+        "CLOUDFLARE_ACCESS_SECRET",
+        "CLOUDFLARE_R2_BUCKET_NAME",
+        "GOOGLE_AUTH_SECRET",
+        "DATABASE_URL"
+      ]
     },
     "postinstall": {
       "outputs": []

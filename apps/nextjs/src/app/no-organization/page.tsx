@@ -38,10 +38,10 @@ export default function NoOrganization() {
           title: "Organization Created",
           description: `Your organization "${organizationName}" has been created successfully.`,
         });
-        router.replace("/dashboard");
+        router.push("/dashboard");
       })
       .catch((error: TRPCError) => {
-        console.log("error", error);
+        console.error(error);
         toast({
           title: "Error",
           description: error.message,

@@ -7,8 +7,11 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
+    CLOUDFLARE_ACCOUNT_ID: z.string(),
+    CLOUDFLARE_ACCESS_ID: z.string(),
+    CLOUDFLARE_ACCESS_SECRET: z.string(),
+    CLOUDFLARE_R2_BUCKET_NAME: z.string(),
     DATABASE_URL: z.string().url(),
-    GOOGLE_AUTH_ID: z.string(),
     GOOGLE_AUTH_SECRET: z.string(),
     BETTER_AUTH_SECRET: z.string(),
     NODE_ENV: z
@@ -22,6 +25,7 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
+    NEXT_PUBLIC_GOOGLE_AUTH_ID: z.string(),
     NEXT_PUBLIC_BETTER_AUTH_URL: z.string().url(),
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
   },
@@ -31,9 +35,13 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
+    CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+    CLOUDFLARE_ACCESS_ID: process.env.CLOUDFLARE_ACCESS_ID,
+    CLOUDFLARE_ACCESS_SECRET: process.env.CLOUDFLARE_ACCESS_SECRET,
+    CLOUDFLARE_R2_BUCKET_NAME: process.env.CLOUDFLARE_R2_BUCKET_NAME,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
-    GOOGLE_AUTH_ID: process.env.GOOGLE_AUTH_ID,
+    NEXT_PUBLIC_GOOGLE_AUTH_ID: process.env.NEXT_PUBLIC_GOOGLE_AUTH_ID,
     GOOGLE_AUTH_SECRET: process.env.GOOGLE_AUTH_SECRET,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     NEXT_PUBLIC_BETTER_AUTH_URL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,

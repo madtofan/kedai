@@ -101,7 +101,7 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
   const clientSession = await auth.api.getSession({
     headers: opts.ctx.headers,
   });
-  if (!clientSession?.user) {
+  if (!clientSession) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return opts.next({
@@ -152,7 +152,7 @@ export const organizationProcedure = protectedProcedure.use(async (opts) => {
     await auth.api.setActiveOrganization({
       headers: opts.ctx.headers,
       body: {
-        orgId: organizationId,
+        organizationId,
       },
     });
   }

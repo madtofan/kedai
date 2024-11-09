@@ -1,40 +1,35 @@
-"use client";
-
-import { Tabs } from "~/components/ui/tabs2";
 import SignIn from "./_sign-in";
 import { SignUp } from "./_sign-up";
-import { useSession } from "~/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { Spinner } from "~/components/ui/spinner";
+import { getSession } from "~/lib/auth-client";
+import { redirect } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 export default function Page() {
-  const { data, isPending } = useSession();
-  const router = useRouter();
-  if (data) {
-    router.replace("/dashboard");
-  }
-  if (isPending) {
-    return <Spinner />;
-  }
+  // TODO - fix get cookie and check current session
+  getSession()
+    .then((response) => {
+      console.log({ response });
+      if (!!response.data) {
+        redirect("/dashboard");
+      }
+    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    .catch(() => {});
   return (
     <div className="w-full">
       <div className="flex w-full flex-col items-center justify-center md:py-10">
-        <div className="md:w-[400px]">
-          <Tabs
-            tabs={[
-              {
-                title: "Sign In",
-                value: "sign-in",
-                content: <SignIn />,
-              },
-              {
-                title: "Sign Up",
-                value: "sign-up",
-                content: <SignUp />,
-              },
-            ]}
-          />
-        </div>
+        <Tabs defaultValue="sign-in" className="w-[400px]">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="sign-in">Sign In</TabsTrigger>
+            <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
+          </TabsList>
+          <TabsContent value="sign-in">
+            <SignIn />
+          </TabsContent>
+          <TabsContent value="sign-up">
+            <SignUp />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

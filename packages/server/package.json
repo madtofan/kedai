@@ -13,10 +13,12 @@
     "test": "jest"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.688.0",
+    "@aws-sdk/s3-request-presigner": "^3.688.0",
     "@t3-oss/env-nextjs": "^0.10.1",
     "@trpc/client": "11.0.0-rc.566",
     "@trpc/server": "11.0.0-rc.566",
-    "better-auth": "^0.6.2",
+    "better-auth": "0.8.1-beta.2",
     "drizzle-orm": "^0.35.3",
     "nanoid": "^5.0.8",
     "postgres": "^3.4.5",

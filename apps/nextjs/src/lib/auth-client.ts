@@ -1,11 +1,20 @@
 import { createAuthClient } from "better-auth/react";
 import { env } from "~/env";
 import { toast } from "./use-toast";
-import { passkeyClient } from "better-auth/plugins";
+import {
+  oneTapClient,
+  passkeyClient,
+  organizationClient,
+} from "better-auth/client/plugins";
 
 export const client = createAuthClient({
   baseURL: env.NEXT_PUBLIC_BETTER_AUTH_URL, // the base url of your auth server
-  plugins: [passkeyClient()],
+  plugins: [
+    organizationClient(),
+    oneTapClient({
+      clientId: env.NEXT_PUBLIC_GOOGLE_AUTH_ID,
+    }),
+  ],
   fetchOptions: {
     onError(e) {
       if (e.error.status === 429) {
@@ -19,4 +28,13 @@ export const client = createAuthClient({
   },
 });
 
-export const { signUp, signIn, signOut, useSession } = client;
+export const {
+  signUp,
+  signIn,
+  signOut,
+  useSession,
+  getSession,
+  oneTap,
+  revokeSessions,
+  organization,
+} = client;

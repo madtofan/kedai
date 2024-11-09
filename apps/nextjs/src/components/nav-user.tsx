@@ -27,7 +27,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar";
-import { signOut } from "~/lib/auth-client";
+import { revokeSessions, signOut } from "~/lib/auth-client";
 import { useToast } from "~/lib/use-toast";
 import { type RouterOutput } from "~/trpc/server";
 import { Spinner } from "./ui/spinner";
@@ -51,6 +51,7 @@ export function NavUser({
   }, [user.name]);
 
   const handleSignOut = async () => {
+    await revokeSessions();
     await signOut({
       fetchOptions: {
         onRequest: () => {

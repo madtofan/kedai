@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
@@ -17,7 +16,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
 import { PasswordInput } from "~/components/ui/password-input";
-import { signIn } from "~/lib/auth-client";
+import { oneTap, signIn } from "~/lib/auth-client";
 import { useToast } from "~/lib/use-toast";
 
 export default function SignIn() {
@@ -28,7 +27,7 @@ export default function SignIn() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   return (
-    <Card className="z-50 max-w-md rounded-md rounded-t-none">
+    <Card className="z-50 max-w-md">
       <CardHeader>
         <CardTitle className="text-lg md:text-xl">Sign In</CardTitle>
         <CardDescription className="text-xs md:text-sm">
@@ -112,10 +111,14 @@ export default function SignIn() {
             <Button
               variant="outline"
               className="w-full gap-2"
+              disabled={loading}
               onClick={async () => {
-                await signIn.social({
-                  provider: "google",
-                  callbackURL: "/dashboard",
+                await oneTap({
+                  fetchOptions: {
+                    onSuccess: () => {
+                      router.replace("/dashboard");
+                    },
+                  },
                 });
               }}
             >
@@ -142,34 +145,11 @@ export default function SignIn() {
                   d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0C79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251"
                 />
               </svg>
-            </Button>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={async () => {
-                await signIn.passkey({
-                  fetchOptions: {
-                    onResponse(context) {
-                      console.log({ context });
-                      router.push("/dashboard");
-                    },
-                  },
-                });
-              }}
-            >
-              <Key size={16} />
-              Sign-in with Passkey
+              Sign in with Google
             </Button>
           </div>
         </div>
       </CardContent>
-      <CardFooter>
-        <div className="flex w-full justify-center border-t py-4">
-          <p className="text-center text-xs text-neutral-500">
-            Secured by <span className="text-orange-400">better-auth.</span>
-          </p>
-        </div>
-      </CardFooter>
     </Card>
   );
 }
