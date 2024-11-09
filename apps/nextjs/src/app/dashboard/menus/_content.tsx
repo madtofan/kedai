@@ -35,6 +35,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "~/lib/use-toast";
 import { TRPCError } from "@trpc/server";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 
 const formSchema = z.object({
   menuGroupId: z.coerce.number().positive(),
@@ -62,7 +72,7 @@ interface Menu {
 export default function DashboardMenuPageContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const [resetKey, setResetKey] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [resetImage, setResetImage] = useState(true);
   const { data: selectOptions, error: menuGroupError } =
     api.menuGroup.getAllMenuGroup.useQuery();
@@ -130,7 +140,7 @@ export default function DashboardMenuPageContent() {
           description: `You have successfully added a new menu ${values.name}.`,
         });
         form.reset();
-        setResetKey((prev) => !prev);
+        setSheetOpen(false);
         await refetchMenus();
       })
       .catch((error: TRPCError) => {
@@ -164,10 +174,25 @@ export default function DashboardMenuPageContent() {
 
   return (
     <>
-      <div className="mb-6 rounded-lg bg-sidebar p-6 shadow">
-        <h2 className="mb-4 text-lg font-semibold">Add New Menu Item</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* className="grid grid-cols-1 gap-4 md:grid-cols-2" */}
+      <Sheet
+        open={sheetOpen}
+        onOpenChange={(state) => {
+          setSheetOpen(state);
+        }}
+      >
+        <div className="mb-6 flex flex-row justify-between rounded-lg bg-sidebar p-4 shadow">
+          <h2 className="text-lg font-semibold">Menu</h2>
+          <div>
+            <SheetTrigger asChild>
+              <Button>Add New Menu</Button>
+            </SheetTrigger>
+          </div>
+        </div>
+        <SheetContent className="bg-sidebar">
+          <SheetHeader>
+            <SheetTitle>Add New Menu Item</SheetTitle>
+            <SheetDescription>asd</SheetDescription>
+          </SheetHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
               <FormField
@@ -180,7 +205,7 @@ export default function DashboardMenuPageContent() {
                       <Input
                         {...field}
                         className="bg-background"
-                        key={`${resetKey}`}
+                        key={`${sheetOpen}`}
                       />
                     </FormControl>
                     <FormMessage />
@@ -210,7 +235,7 @@ export default function DashboardMenuPageContent() {
                             id="image"
                             type="file"
                             accept="image/*"
-                            key={`${resetKey}_${resetImage}`}
+                            key={`${sheetOpen}_${resetImage}`}
                             className="w-full"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
@@ -251,7 +276,7 @@ export default function DashboardMenuPageContent() {
                       <Input
                         {...field}
                         className="bg-background"
-                        key={`${resetKey}`}
+                        key={`${sheetOpen}`}
                         type="number"
                         step={0.01}
                       />
@@ -270,7 +295,7 @@ export default function DashboardMenuPageContent() {
                       <Input
                         {...field}
                         className="bg-background"
-                        key={`${resetKey}`}
+                        key={`${sheetOpen}`}
                         type="number"
                         step={0.01}
                       />
@@ -288,7 +313,7 @@ export default function DashboardMenuPageContent() {
                     <FormControl>
                       <Textarea
                         className="resize-none bg-background"
-                        key={`${resetKey}`}
+                        key={`${sheetOpen}`}
                         {...field}
                       />
                     </FormControl>
@@ -302,7 +327,7 @@ export default function DashboardMenuPageContent() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Menu Group</FormLabel>
-                    <Select onValueChange={field.onChange} key={`${resetKey}`}>
+                    <Select onValueChange={field.onChange} key={`${sheetOpen}`}>
                       <FormControl>
                         <SelectTrigger className="bg-background">
                           <SelectValue placeholder="Select a group for this menu" />
@@ -320,16 +345,17 @@ export default function DashboardMenuPageContent() {
                   </FormItem>
                 )}
               />
-              <div className="flex items-end">
+              <div className="flex items-end"></div>
+              <SheetFooter>
                 <Button type="submit">
                   <Plus className="mr-2 h-4 w-4" />
                   Add Item
                 </Button>
-              </div>
+              </SheetFooter>
             </form>
           </Form>
-        </div>
-      </div>
+        </SheetContent>
+      </Sheet>
 
       <div className="overflow-hidden rounded-lg bg-sidebar p-6 shadow">
         <Table>

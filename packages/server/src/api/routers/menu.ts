@@ -45,42 +45,45 @@ const menuRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const menuDetail = (
-        await ctx.db
-          .insert(menuDetails)
-          .values({
-            name: input.name,
-            description: input.description,
-            image: input.image,
-            sale: input.sale,
-            cost: input.cost,
-          })
-          .returning()
-      ).find(Boolean);
-      if (!menuDetail) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create menu details.",
+      const menuDetail = await ctx.db.transaction(async (tx) => {
+        const createdMenuDetail = (
+          await tx
+            .insert(menuDetails)
+            .values({
+              name: input.name,
+              description: input.description,
+              image: input.image,
+              sale: input.sale,
+              cost: input.cost,
+            })
+            .returning()
+        ).find(Boolean);
+        if (!createdMenuDetail) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create menu details.",
+          });
+        }
+        const createdMenu = (
+          await tx
+            .insert(menus)
+            .values({
+              menuGroupId: input.menuGroupId,
+              menuDetailsId: createdMenuDetail.id,
+            })
+            .returning()
+        ).find(Boolean);
+        if (!createdMenu) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create menu.",
+          });
+        }
+        await tx.insert(menuToMenuDetails).values({
+          menuId: createdMenu.id,
+          menuDetailId: createdMenuDetail.id,
         });
-      }
-      const createdMenu = (
-        await ctx.db
-          .insert(menus)
-          .values({
-            menuGroupId: input.menuGroupId,
-            menuDetailsId: menuDetail.id,
-          })
-          .returning()
-      ).find(Boolean);
-      if (!createdMenu) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create menu.",
-        });
-      }
-      await ctx.db.insert(menuToMenuDetails).values({
-        menuId: createdMenu.id,
-        menuDetailId: menuDetail.id,
+        return createdMenuDetail;
       });
       return menuDetail;
     }),
@@ -122,38 +125,40 @@ const menuRouter = createTRPCRouter({
           message: "Menu does not originate from this organization.",
         });
       }
-      const menuDetail = (
-        await ctx.db
-          .insert(menuDetails)
-          .values({
-            name: input.name,
-            description: input.description,
-            image: input.image,
-            sale: input.sale,
-            cost: input.cost,
-          })
-          .returning()
-      ).find(Boolean);
+      await ctx.db.transaction(async (tx) => {
+        const menuDetail = (
+          await tx
+            .insert(menuDetails)
+            .values({
+              name: input.name,
+              description: input.description,
+              image: input.image,
+              sale: input.sale,
+              cost: input.cost,
+            })
+            .returning()
+        ).find(Boolean);
 
-      if (!menuDetail) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create menu details.",
-        });
-      }
-      const updatedMenu = await ctx.db
-        .update(menus)
-        .set({
-          menuDetailsId: menuDetail.id,
-        })
-        .where(eq(menus.id, input.id))
-        .returning({ id: menus.id });
-      if (!updatedMenu) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update menu.",
-        });
-      }
+        if (!menuDetail) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create menu details.",
+          });
+        }
+        const updatedMenu = await tx
+          .update(menus)
+          .set({
+            menuDetailsId: menuDetail.id,
+          })
+          .where(eq(menus.id, input.id))
+          .returning({ id: menus.id });
+        if (!updatedMenu) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to update menu.",
+          });
+        }
+      });
       return { sucess: true };
     }),
 
@@ -186,16 +191,29 @@ const menuRouter = createTRPCRouter({
         });
       }
 
-      const deletedMenu = await ctx.db
-        .delete(menus)
-        .where(eq(menus.id, input.id))
-        .returning({ id: menus.id });
-      if (!deletedMenu) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to delete store.",
+      await ctx.db.transaction(async (tx) => {
+        const deletedMenu = (
+          await tx
+            .delete(menus)
+            .where(eq(menus.id, input.id))
+            .returning({ id: menus.id, menuDetailsId: menus.menuDetailsId })
+        ).find(Boolean);
+        if (!deletedMenu) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to delete menu.",
+          });
+        }
+        const ordersWithMenu = await tx.query.orderItems.findFirst({
+          where: (orderItem, { eq }) =>
+            eq(orderItem.menuDetailsId, deletedMenu.menuDetailsId),
         });
-      }
+        if (!ordersWithMenu) {
+          await tx
+            .delete(menuDetails)
+            .where(eq(menuDetails.id, deletedMenu.menuDetailsId));
+        }
+      });
       return { success: true };
     }),
 });

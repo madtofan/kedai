@@ -23,7 +23,6 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const stores = await api.store.getAllStore().catch((err: TRPCError) => {
-    console.log({ err });
     if (err.code === "FORBIDDEN") {
       redirect("/no-organization");
     }
@@ -32,7 +31,6 @@ export default async function DashboardLayout({
   const userDetails = await api.user
     .getCurrentUser()
     .catch((err: TRPCError) => {
-      console.log({ err });
       if (err.code === "FORBIDDEN") {
         redirect("/no-organization");
       }

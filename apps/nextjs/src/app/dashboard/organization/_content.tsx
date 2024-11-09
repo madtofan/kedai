@@ -106,8 +106,8 @@ export default function DashboardOrganizationContent() {
 
   return (
     <>
-      <div className="mb-6 rounded-lg bg-sidebar p-6 shadow">
-        <h2 className="mb-4 text-lg font-semibold">{organization.name}</h2>
+      <div className="mb-6 flex flex-row justify-between rounded-lg bg-sidebar p-6 shadow">
+        <h2 className="text-lg font-semibold">{organization.name}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2"></div>
         <div className="flex items-end gap-4">
           <Popover>

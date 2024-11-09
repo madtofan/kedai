@@ -46,60 +46,76 @@ const organizationRouter = createTRPCRouter({
         });
       }
 
-      const adminRole = (
-        await ctx.db
-          .insert(permissionGroups)
+      await ctx.db.transaction(async (tx) => {
+        const adminRole = (
+          await tx
+            .insert(permissionGroups)
+            .values({
+              name: "admin",
+              isAdmin: true,
+              organizationId: createdOrganization.id,
+            })
+            .returning({ id: permissionGroups.id })
+        ).find(Boolean);
+
+        if (!adminRole) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create organization role",
+          });
+        }
+
+        const addedMember = createdOrganization.members.find(Boolean);
+
+        if (!addedMember) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to add self to organization.",
+          });
+        }
+
+        const createdMemberToPermissionGroups = tx
+          .insert(memberToPermissionGroups)
           .values({
-            name: "admin",
-            isAdmin: true,
+            memberId: addedMember.id,
+            permissionGroupId: adminRole.id,
+          });
+
+        const createdStores = tx.insert(stores).values({
+          organizationId: createdOrganization.id,
+          name: input.storeName,
+          slug: slug(input.storeName),
+        });
+
+        const createdPermissionGroups = tx.insert(permissionGroups).values({
+          name: "member",
+          organizationId: createdOrganization.id,
+          isDefault: true,
+        });
+
+        const createdMenuGroups = tx.insert(menuGroups).values([
+          {
             organizationId: createdOrganization.id,
-          })
-          .returning({ id: permissionGroups.id })
-      ).find(Boolean);
+            name: "Food",
+          },
+          {
+            organizationId: createdOrganization.id,
+            name: "Drinks",
+          },
+        ]);
 
-      if (!adminRole) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create organization role",
+        await Promise.all([
+          createdMemberToPermissionGroups,
+          createdStores,
+          createdPermissionGroups,
+          createdMenuGroups,
+        ]).catch(() => {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to add necessary additions to organization",
+          });
         });
-      }
-
-      const addedMember = createdOrganization.members.find(Boolean);
-
-      if (!addedMember) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to add self to organization.",
-        });
-      }
-
-      await ctx.db.insert(memberToPermissionGroups).values({
-        memberId: addedMember.id,
-        permissionGroupId: adminRole.id,
       });
-
-      await ctx.db.insert(stores).values({
-        organizationId: createdOrganization.id,
-        name: input.storeName,
-        slug: slug(input.storeName),
-      });
-
-      await ctx.db.insert(permissionGroups).values({
-        name: "member",
-        organizationId: createdOrganization.id,
-        isDefault: true,
-      });
-
-      await ctx.db.insert(menuGroups).values([
-        {
-          organizationId: createdOrganization.id,
-          name: "Food",
-        },
-        {
-          organizationId: createdOrganization.id,
-          name: "Drinks",
-        },
-      ]);
 
       const { id: _id, ...response } = createdOrganization;
       return response;

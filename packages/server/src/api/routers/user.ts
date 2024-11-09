@@ -112,12 +112,13 @@ const userRouter = createTRPCRouter({
             id: true,
           },
         });
-      defaultPermissionGroups.forEach((permissionGroup) => {
-        ctx.db.insert(memberToPermissionGroups).values({
+      const valuesToInsert = defaultPermissionGroups.map(
+        (defaultPermission) => ({
           memberId: acceptedInvitation.member.id,
-          permissionGroupId: permissionGroup.id,
-        });
-      });
+          permissionGroupId: defaultPermission.id,
+        }),
+      );
+      ctx.db.insert(memberToPermissionGroups).values(valuesToInsert);
       return { success: true };
     }),
 

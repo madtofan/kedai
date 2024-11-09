@@ -23,68 +23,71 @@ const orderRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      let order = await ctx.db.query.orders.findFirst({
-        where: (order, { eq, and, isNull }) =>
-          and(
-            eq(order.storeSlug, input.storeSlug),
-            eq(order.tableName, input.tableName),
-            isNull(order.completedAt),
-          ),
-        columns: {
-          remarks: false,
-          completedAt: false,
-          updatedAt: false,
-          completedValue: false,
-        },
-      });
-      if (!order) {
+      const { order, items } = await ctx.db.transaction(async (tx) => {
+        let createdOrder = await tx.query.orders.findFirst({
+          where: (order, { eq, and, isNull }) =>
+            and(
+              eq(order.storeSlug, input.storeSlug),
+              eq(order.tableName, input.tableName),
+              isNull(order.completedAt),
+            ),
+          columns: {
+            remarks: false,
+            completedAt: false,
+            updatedAt: false,
+            completedValue: false,
+          },
+        });
+        if (!createdOrder) {
+          const {
+            remarks: _remarks,
+            completedAt: _completedAt,
+            updatedAt: _updatedAt,
+            completedValue: _completedValue,
+            ...columns
+          } = getTableColumns(orders);
+          createdOrder = (
+            await tx
+              .insert(orders)
+              .values({
+                storeSlug: input.storeSlug,
+                tableName: input.tableName,
+              })
+              .returning(columns)
+          ).find(Boolean);
+        }
+        if (!createdOrder) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create order.",
+          });
+        }
+        const itemValues = input.orders.map(({ menuDetailsId, quantity }) => ({
+          menuDetailsId,
+          quantity,
+          orderId: createdOrder.id,
+          status: "new",
+        }));
         const {
-          remarks: _remarks,
-          completedAt: _completedAt,
+          id: _id,
+          orderId: _orderId,
+          status: _status,
+          createdAt: _createdAt,
           updatedAt: _updatedAt,
-          completedValue: _completedValue,
           ...columns
-        } = getTableColumns(orders);
-        order = (
-          await ctx.db
-            .insert(orders)
-            .values({
-              storeSlug: input.storeSlug,
-              tableName: input.tableName,
-            })
-            .returning(columns)
-        ).find(Boolean);
-      }
-      if (!order) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create order.",
-        });
-      }
-      const itemValues = input.orders.map(({ menuDetailsId, quantity }) => ({
-        menuDetailsId,
-        quantity,
-        orderId: order.id,
-        status: "new",
-      }));
-      const {
-        id: _id,
-        orderId: _orderId,
-        status: _status,
-        createdAt: _createdAt,
-        updatedAt: _updatedAt,
-        ...columns
-      } = getTableColumns(orderItems);
-      const items = await ctx.db
-        .insert(orderItems)
-        .values(itemValues)
-        .returning(columns);
-      if (items.length !== input.orders.length) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create some item orders.",
-        });
-      }
+        } = getTableColumns(orderItems);
+        const createdItems = await tx
+          .insert(orderItems)
+          .values(itemValues)
+          .returning(columns);
+        if (createdItems.length !== input.orders.length) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create some item orders.",
+          });
+        }
+        return { order: createdOrder, items: createdItems };
+      });
 
       return { order, items };
     }),
@@ -124,41 +127,44 @@ const orderRouter = createTRPCRouter({
         });
       }
 
-      if (input.completedValue || input.remarks) {
-        let setValues = {};
-        if (input.completedValue)
-          setValues = { ...setValues, completedValue: input.completedValue };
-        if (input.remarks) setValues = { ...setValues, remarks: input.remarks };
-        const updatedOrder = (
-          await ctx.db
-            .update(orders)
-            .set(setValues)
-            .where(eq(orders.id, input.id))
-            .returning({ id: orders.id })
-        )?.find(Boolean);
-        if (updatedOrder) {
+      await ctx.db.transaction(async (tx) => {
+        if (input.completedValue || input.remarks) {
+          let setValues = {};
+          if (input.completedValue)
+            setValues = { ...setValues, completedValue: input.completedValue };
+          if (input.remarks)
+            setValues = { ...setValues, remarks: input.remarks };
+          const updatedOrder = (
+            await tx
+              .update(orders)
+              .set(setValues)
+              .where(eq(orders.id, input.id))
+              .returning({ id: orders.id })
+          )?.find(Boolean);
+          if (updatedOrder) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "Failed to update order",
+            });
+          }
+        }
+        const itemIds = order.orderItems.map((item) => item.id);
+        const updatedItems = await tx
+          .update(orderItems)
+          .set({
+            status: input.itemStatuses,
+          })
+          .where(inArray(orderItems, itemIds))
+          .returning({
+            id: orderItems.id,
+          });
+        if (updatedItems.length !== itemIds.length) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to update order",
+            message: "Failed to update all order items",
           });
         }
-      }
-      const itemIds = order.orderItems.map((item) => item.id);
-      const updatedItems = await ctx.db
-        .update(orderItems)
-        .set({
-          status: input.itemStatuses,
-        })
-        .where(inArray(orderItems, itemIds))
-        .returning({
-          id: orderItems.id,
-        });
-      if (updatedItems.length !== itemIds.length) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to update all order items",
-        });
-      }
+      });
 
       return { success: true };
     }),
