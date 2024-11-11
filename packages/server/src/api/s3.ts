@@ -3,7 +3,7 @@ import { env } from "../env";
 
 export const S3 = new S3Client({
   region: "auto",
-  endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${env.CLOUDFLARE_R2_BUCKET_NAME}`,
+  endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
   credentials: {
     accessKeyId: env.CLOUDFLARE_ACCESS_ID,
     secretAccessKey: env.CLOUDFLARE_ACCESS_SECRET,

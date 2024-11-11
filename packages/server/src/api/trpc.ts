@@ -118,7 +118,6 @@ export const protectedProcedure = publicProcedure.use(async (opts) => {
  * This guarantees that the user has logged in and the user has an existing organization, and the userId can be obtained from ctx.user.userId
  */
 export const organizationProcedure = protectedProcedure.use(async (opts) => {
-  console.log({ path: opts.path });
   let organizationId = opts.ctx.session.activeOrganizationId;
   if (!organizationId) {
     organizationId = (

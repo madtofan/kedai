@@ -1,11 +1,11 @@
 "use client";
 
+import imageCompression from "browser-image-compression";
 import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
@@ -31,12 +31,26 @@ export function SignUp() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      })
+        .then((compressedFile) => {
+          setImage(compressedFile);
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+          };
+          reader.readAsDataURL(compressedFile);
+        })
+        .catch(() => {
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "An error occured loading the selected image.",
+          });
+        });
     }
   };
 

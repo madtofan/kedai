@@ -3,6 +3,10 @@ import { createTRPCRouter, organizationProcedure } from "../trpc";
 import { menuDetails, menus, menuToMenuDetails } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { env } from "../../env";
+import { S3 } from "../s3";
 
 const menuRouter = createTRPCRouter({
   getMenu: organizationProcedure.query(async ({ ctx }) => {
@@ -39,20 +43,54 @@ const menuRouter = createTRPCRouter({
         menuGroupId: z.number().int(),
         name: z.string().trim().min(1).max(256),
         description: z.string().trim().max(256).optional(),
-        image: z.string().trim().url().max(256).optional(),
+        image: z
+          .object({
+            fileSize: z.number(),
+            fileType: z.string(),
+          })
+          .optional(),
         sale: z.string().trim().default("0.00"),
         cost: z.string().trim().default("0.00"),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const menuDetail = await ctx.db.transaction(async (tx) => {
+      const preSignedUrl = await ctx.db.transaction(async (tx) => {
+        let image = null;
+        let signedUrl = null;
+        if (input.image) {
+          const sizeLimit = 1 * 1024 ** 2; // 1MB
+          if (input.image.fileSize > sizeLimit) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Image size too big.",
+            });
+          }
+          if (
+            input.image.fileType !== "image/jpeg" &&
+            input.image.fileType !== "image/png"
+          ) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Image type not supported.",
+            });
+          }
+          const objectKey = `${ctx.organizationId}/${input.name}`;
+          const cmd = new PutObjectCommand({
+            Bucket: env.CLOUDFLARE_R2_BUCKET_NAME,
+            Key: objectKey,
+            ContentLength: input.image.fileSize,
+            ContentType: input.image.fileType,
+          });
+          image = `${env.CLOUDFLARE_IMAGE_BASE_PATH}/${objectKey}`;
+          signedUrl = await getSignedUrl(S3, cmd, { expiresIn: 3600 });
+        }
         const createdMenuDetail = (
           await tx
             .insert(menuDetails)
             .values({
               name: input.name,
               description: input.description,
-              image: input.image,
+              image,
               sale: input.sale,
               cost: input.cost,
             })
@@ -83,9 +121,9 @@ const menuRouter = createTRPCRouter({
           menuId: createdMenu.id,
           menuDetailId: createdMenuDetail.id,
         });
-        return createdMenuDetail;
+        return signedUrl;
       });
-      return menuDetail;
+      return preSignedUrl;
     }),
 
   editMenu: organizationProcedure

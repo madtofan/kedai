@@ -12,9 +12,10 @@
         ".env"
       ],
       "env": [
-        "CLOUDFLARE_ACCOUNT_ID",
         "CLOUDFLARE_ACCESS_ID",
         "CLOUDFLARE_ACCESS_SECRET",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_IMAGE_BASE_PATH",
         "CLOUDFLARE_R2_BUCKET_NAME",
         "DATABASE_URL",
         "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
@@ -36,9 +37,10 @@
         ".env"
       ],
       "env": [
-        "CLOUDFLARE_ACCOUNT_ID",
         "CLOUDFLARE_ACCESS_ID",
         "CLOUDFLARE_ACCESS_SECRET",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_IMAGE_BASE_PATH",
         "CLOUDFLARE_R2_BUCKET_NAME",
         "DATABASE_URL",
         "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
@@ -64,9 +66,10 @@
       ],
       "env": [
         "BETTER_AUTH_SECRET",
-        "CLOUDFLARE_ACCOUNT_ID",
         "CLOUDFLARE_ACCESS_ID",
         "CLOUDFLARE_ACCESS_SECRET",
+        "CLOUDFLARE_ACCOUNT_ID",
+        "CLOUDFLARE_IMAGE_BASE_PATH",
         "CLOUDFLARE_R2_BUCKET_NAME",
         "GOOGLE_AUTH_SECRET",
         "DATABASE_URL"

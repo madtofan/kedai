@@ -1,8 +1,9 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import imageCompression from "browser-image-compression";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Plus, Trash, X } from "lucide-react";
+import { ImageOff, Plus, Trash, X } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -13,14 +14,6 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import {
   Form,
   FormField,
@@ -34,10 +27,9 @@ import { api } from "~/trpc/react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "~/lib/use-toast";
-import { TRPCError } from "@trpc/server";
+import { type TRPCError } from "@trpc/server";
 import {
   Sheet,
-  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -45,12 +37,30 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/sheet";
+import { type RouterInputs } from "@kedai/api";
+import { betterFetch } from "@better-fetch/fetch";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
+import { Spinner } from "~/components/ui/spinner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
+import { ScrollArea } from "~/components/ui/scroll-area";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const formSchema = z.object({
   menuGroupId: z.coerce.number().positive(),
   name: z.string().min(1).max(256),
   description: z.string().max(256).optional(),
-  image: z.instanceof(File).optional(),
+  image: z
+    .object({
+      fileSize: z.number(),
+      fileType: z.string(),
+    })
+    .optional(),
   sale: z.coerce.number(),
   cost: z.coerce.number(),
 });
@@ -73,7 +83,6 @@ export default function DashboardMenuPageContent() {
   const router = useRouter();
   const { toast } = useToast();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [resetImage, setResetImage] = useState(true);
   const { data: selectOptions, error: menuGroupError } =
     api.menuGroup.getAllMenuGroup.useQuery();
   const {
@@ -82,6 +91,9 @@ export default function DashboardMenuPageContent() {
     refetch: refetchMenus,
   } = api.menu.getMenu.useQuery();
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [resetImage, setResetImage] = useState(true);
+  const [imageFile, setImageFile] = useState<File>();
+  const [loadingImage, setLoadingImage] = useState(false);
 
   useEffect(() => {
     if (
@@ -127,19 +139,42 @@ export default function DashboardMenuPageContent() {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    addMenu({
+    let menuDetails: RouterInputs["menu"]["addMenu"] = {
       menuGroupId: values.menuGroupId,
       name: values.name,
       description: values.description,
       sale: `${values.sale}`,
       cost: `${values.cost}`,
-    })
-      .then(async () => {
+    };
+    if (values.image) {
+      menuDetails = {
+        ...menuDetails,
+        image: values.image,
+      };
+    }
+    addMenu(menuDetails)
+      .then(async (uploadUrl) => {
+        if (uploadUrl && imageFile && values.image?.fileType) {
+          betterFetch(uploadUrl, {
+            method: "PUT",
+            headers: {
+              "content-type": values.image?.fileType,
+            },
+            body: imageFile,
+          }).catch(() => {
+            toast({
+              title: "Error",
+              description: "Failed to upload image.",
+              variant: "destructive",
+            });
+          });
+        }
         toast({
           title: "Success!",
           description: `You have successfully added a new menu ${values.name}.`,
         });
         form.reset();
+        setImagePreview(null);
         setSheetOpen(false);
         await refetchMenus();
       })
@@ -238,14 +273,35 @@ export default function DashboardMenuPageContent() {
                             key={`${sheetOpen}_${resetImage}`}
                             className="w-full"
                             onChange={(e) => {
+                              setLoadingImage(true);
                               const file = e.target.files?.[0];
                               if (file) {
-                                form.setValue("image", file);
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setImagePreview(reader.result as string);
-                                };
-                                reader.readAsDataURL(file);
+                                imageCompression(file, {
+                                  maxSizeMB: 1,
+                                  maxWidthOrHeight: 1920,
+                                  useWebWorker: true,
+                                })
+                                  .then((compressedFile) => {
+                                    const previewUrl =
+                                      URL.createObjectURL(compressedFile);
+                                    setImagePreview(previewUrl);
+                                    setImageFile(compressedFile);
+                                    form.setValue("image", {
+                                      fileSize: compressedFile.size,
+                                      fileType: compressedFile.type,
+                                    });
+                                  })
+                                  .catch(() => {
+                                    toast({
+                                      variant: "destructive",
+                                      title: "Error",
+                                      description:
+                                        "An error occured loading the selected image.",
+                                    });
+                                  })
+                                  .finally(() => {
+                                    setLoadingImage(false);
+                                  });
                               }
                             }}
                           />
@@ -357,42 +413,135 @@ export default function DashboardMenuPageContent() {
         </SheetContent>
       </Sheet>
 
-      <div className="overflow-hidden rounded-lg bg-sidebar p-6 shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Menu Group</TableHead>
-              <TableHead>Sale</TableHead>
-              <TableHead>Cost</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+      <ScrollArea className="h-[calc(100vh-200px)] justify-center">
+        {menuItems.length > 0 ? (
+          <div className="flex flex-wrap gap-4">
             {menuItems.map((item) => (
-              <TableRow key={item.menuDetailsId}>
-                <TableCell className="font-medium">{item.name}</TableCell>
-                <TableCell>{item.menuGroupName}</TableCell>
-                <TableCell>${item.sale}</TableCell>
-                <TableCell>${item.cost}</TableCell>
-                <TableCell className="max-w-xs truncate">
-                  {item.description}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => onDeleteItem(item.id)}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <MenuItem key={item.id} menu={item} onDeleteItem={onDeleteItem} />
             ))}
-          </TableBody>
-        </Table>
-      </div>
+          </div>
+        ) : (
+          <div className="flex justify-center text-center">
+            Your organization currently have no menu.
+          </div>
+        )}
+      </ScrollArea>
+      <Dialog open={loadingImage}>
+        <DialogContent
+          disableClose={true}
+          className="flex max-w-60 flex-row place-content-center items-center"
+        >
+          <Spinner />
+          Loading Image
+        </DialogContent>
+      </Dialog>
     </>
+  );
+}
+
+const MAX_RETRIES = 3;
+
+function MenuItem({
+  menu,
+  onDeleteItem,
+}: {
+  menu: Menu;
+  onDeleteItem: (itemId: number) => void;
+}) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [image, setImage] = useState(menu.image);
+  const [retries, setRetries] = useState(0);
+
+  const renderImage = () => {
+    if (!image) {
+      return (
+        <div className="flex h-40 w-40 items-center justify-center rounded-md bg-primary/10 shadow">
+          <ImageOff />
+        </div>
+      );
+    }
+    return (
+      <>
+        {isLoading && (
+          <Skeleton className="absolute h-40 w-40 rounded-md object-cover shadow" />
+        )}
+        {/* eslint-disable-next-line @next/next/no-img-element*/}
+        <img
+          src={image}
+          key={`${menu.id}_${retries}`}
+          alt={`${menu.name} preview`}
+          className="h-40 w-40 rounded-md object-cover shadow"
+          onLoad={() => setIsLoading(false)}
+          onError={() => {
+            if (retries >= MAX_RETRIES) {
+              setImage(null);
+              return;
+            }
+            setTimeout(function () {
+              setRetries((prev) => prev + 1);
+            }, 2000);
+          }}
+        />
+      </>
+    );
+  };
+
+  return (
+    <Card className="min-w-[600px] max-w-[800px] flex-grow bg-sidebar">
+      <CardHeader className="flex flex-row justify-between">
+        <div>
+          <CardTitle>{menu.name}</CardTitle>
+          <CardDescription>{menu.description}</CardDescription>
+        </div>
+        <div className="pl-4">
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => onDeleteItem(menu.id)}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-row justify-between">
+        <div className="flex flex-row justify-between">
+          <div>
+            <p>price: </p>
+            <p>cost: </p>
+            <p>group: </p>
+          </div>
+          <div className="ml-4">
+            <p>{menu.sale}</p>
+            <p>{menu.cost}</p>
+            <p>{menu.menuGroupName}</p>
+          </div>
+        </div>
+        <div>
+          {renderImage()}
+          {/* {image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={image}
+              key={`${menu.id}_${retries}`}
+              alt={`${menu.name} preview`}
+              className="h-40 w-40 rounded-md object-cover shadow"
+              onError={() => {
+                if (retries >= MAX_RETRIES) {
+                  setImage(null);
+                  return;
+                }
+                setTimeout(function () {
+                  setRetries((prev) => prev + 1);
+                }, 2000);
+              }}
+            />
+          ) : (
+            <div className="flex h-40 w-40 items-center justify-center rounded-md bg-primary/10 shadow">
+              <ImageOff />
+            </div>
+          )} */}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

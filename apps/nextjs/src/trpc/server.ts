@@ -4,7 +4,6 @@ import { cache } from "react";
 
 import { createCaller, type AppRouter, createTRPCContext } from "@kedai/api";
 import { createQueryClient } from "./query-client";
-import { type inferRouterOutputs } from "@trpc/server";
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -26,5 +25,3 @@ export const { trpc: api, HydrateClient } = createHydrationHelpers<AppRouter>(
   caller,
   getQueryClient,
 );
-
-export type RouterOutput = inferRouterOutputs<AppRouter>;
