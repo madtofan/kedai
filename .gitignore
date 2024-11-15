@@ -20,6 +20,8 @@ next-env.d.ts
 
 # production
 /build
+.vercel
+.worker-next
 
 # misc
 .DS_Store

@@ -7,6 +7,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../../env";
 import { S3 } from "../s3";
+import { nanoid } from "nanoid";
 
 const menuRouter = createTRPCRouter({
   getMenu: organizationProcedure.query(async ({ ctx }) => {
@@ -74,15 +75,15 @@ const menuRouter = createTRPCRouter({
               message: "Image type not supported.",
             });
           }
-          const objectKey = `${ctx.organizationId}/${input.name}`;
+          const objectKey = `${ctx.organizationId}/${nanoid()}`;
           const cmd = new PutObjectCommand({
             Bucket: env.CLOUDFLARE_R2_BUCKET_NAME,
             Key: objectKey,
             ContentLength: input.image.fileSize,
             ContentType: input.image.fileType,
           });
-          image = `${env.CLOUDFLARE_IMAGE_BASE_PATH}/${objectKey}`;
           signedUrl = await getSignedUrl(S3, cmd, { expiresIn: 3600 });
+          image = `${env.CLOUDFLARE_IMAGE_BASE_PATH}/${objectKey}`;
         }
         const createdMenuDetail = (
           await tx

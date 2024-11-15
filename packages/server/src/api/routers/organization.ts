@@ -125,7 +125,7 @@ const organizationRouter = createTRPCRouter({
     const deletedOrganization = await auth.api.deleteOrganization({
       headers: ctx.headers,
       body: {
-        orgId: ctx.organizationId,
+        organizationId: ctx.organizationId,
       },
     });
     if (!deletedOrganization) {

@@ -1,78 +1,85 @@
 {
+  "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "BETTER_AUTH_SECRET",
+    "CLOUDFLARE_ACCESS_ID",
+    "CLOUDFLARE_ACCESS_SECRET",
+    "CLOUDFLARE_ACCOUNT_ID",
+    "CLOUDFLARE_IMAGE_BASE_PATH",
+    "CLOUDFLARE_R2_BUCKET_NAME",
+    "GOOGLE_AUTH_SECRET",
+    "DATABASE_URL"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**", ".expo/**"],
+      "dependsOn": [
+        "^build"
+      ],
       "inputs": [
         "$TURBO_DEFAULT$",
-        ".env.production.local",
-        ".env.local",
-        ".env.production",
-        ".env"
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        ".expo/**"
       ],
       "env": [
-        "CLOUDFLARE_ACCESS_ID",
-        "CLOUDFLARE_ACCESS_SECRET",
-        "CLOUDFLARE_ACCOUNT_ID",
-        "CLOUDFLARE_IMAGE_BASE_PATH",
-        "CLOUDFLARE_R2_BUCKET_NAME",
-        "DATABASE_URL",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
-        "CLERK_SECRET_KEY",
-        "NEXT_PUBLIC_GOOGLE_AUTH_ID",
         "GOOGLE_AUTH_SECRET",
+        "NEXT_PUBLIC_APP_ENV",
         "NEXT_PUBLIC_BETTER_AUTH_URL",
-        "BETTER_AUTH_SECRET"
+        "NEXT_PUBLIC_GOOGLE_AUTH_ID"
       ]
     },
-    "dev": {
-      "cache": false,
-      "persistent": true,
+    "build:worker": {
+      "dependsOn": [
+        "^build"
+      ],
       "inputs": [
         "$TURBO_DEFAULT$",
-        ".env.development.local",
-        ".env.local",
-        ".env.development",
-        ".env"
+        ".env*"
+      ],
+      "outputs": [
+        ".next/**",
+        "!.next/cache/**",
+        "dist/**",
+        ".expo/**"
       ],
       "env": [
-        "CLOUDFLARE_ACCESS_ID",
-        "CLOUDFLARE_ACCESS_SECRET",
-        "CLOUDFLARE_ACCOUNT_ID",
-        "CLOUDFLARE_IMAGE_BASE_PATH",
-        "CLOUDFLARE_R2_BUCKET_NAME",
-        "DATABASE_URL",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
-        "CLERK_SECRET_KEY",
-        "NEXT_PUBLIC_GOOGLE_AUTH_ID",
         "GOOGLE_AUTH_SECRET",
+        "NEXT_PUBLIC_APP_ENV",
         "NEXT_PUBLIC_BETTER_AUTH_URL",
-        "BETTER_AUTH_SECRET"
+        "NEXT_PUBLIC_GOOGLE_AUTH_ID"
       ]
     },
     "lint": {
-      "outputs": []
+      "dependsOn": [
+        "^lint"
+      ]
+    },
+    "dev": {
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        ".env*"
+      ],
+      "env": [
+        "CLERK_SECRET_KEY",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "GOOGLE_AUTH_SECRET",
+        "NEXT_PUBLIC_APP_ENV",
+        "NEXT_PUBLIC_BETTER_AUTH_URL",
+        "NEXT_PUBLIC_GOOGLE_AUTH_ID"
+      ],
+      "cache": false,
+      "persistent": true
     },
     "db:push": {
       "outputs": [],
       "inputs": [
         "$TURBO_DEFAULT$",
-        ".env.development.local",
-        ".env.local",
-        ".env.development",
-        ".env"
-      ],
-      "env": [
-        "BETTER_AUTH_SECRET",
-        "CLOUDFLARE_ACCESS_ID",
-        "CLOUDFLARE_ACCESS_SECRET",
-        "CLOUDFLARE_ACCOUNT_ID",
-        "CLOUDFLARE_IMAGE_BASE_PATH",
-        "CLOUDFLARE_R2_BUCKET_NAME",
-        "GOOGLE_AUTH_SECRET",
-        "DATABASE_URL"
+        ".env*"
       ]
     },
     "postinstall": {

@@ -7,33 +7,58 @@ import {
 import { stores } from "../../db/schema";
 import { and, eq, getTableColumns } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
+import slug from "slug";
 
 const storeRouter = createTRPCRouter({
   addStore: organizationProcedure
     .input(
       z.object({
         name: z.string().trim().min(1).max(256),
-        slug: z.string().trim().min(1).max(256),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const { organizationId: _organizationId, ...columns } =
         getTableColumns(stores);
-      const createdStore = await ctx.db
-        .insert(stores)
-        .values({
-          name: input.name,
-          slug: input.slug,
-          organizationId: ctx.organizationId,
-        })
-        .returning(columns);
-      if (!createdStore) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to create store.",
+      const storeSlug = slug(input.name);
+      const store = await ctx.db.transaction(async (tx) => {
+        let append = "";
+        const storeWithSimilarSlug = await tx.query.stores.findMany({
+          where: (store, { and, eq, like }) =>
+            and(
+              like(store.slug, `${storeSlug}%`),
+              eq(store.organizationId, ctx.organizationId),
+            ),
         });
-      }
-      return createdStore;
+        if (storeWithSimilarSlug.length > 0) {
+          append = `-${Math.max(
+            ...storeWithSimilarSlug.map((store) => {
+              const slugNumber = Number(store.slug.split("-").at(-1));
+              if (isNaN(slugNumber)) {
+                return 2;
+              }
+              return slugNumber + 1;
+            }),
+          )}`;
+        }
+        const createdStore = (
+          await ctx.db
+            .insert(stores)
+            .values({
+              name: input.name,
+              slug: `${storeSlug}${append}`,
+              organizationId: ctx.organizationId,
+            })
+            .returning(columns)
+        ).find(Boolean);
+        if (!createdStore) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to create store.",
+          });
+        }
+        return createdStore;
+      });
+      return store;
     }),
 
   editStore: organizationProcedure
@@ -41,6 +66,7 @@ const storeRouter = createTRPCRouter({
       z.object({
         id: z.number().int(),
         name: z.string().trim().min(1).max(256),
+        slug: z.string().trim().min(1).max(256),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,6 +76,7 @@ const storeRouter = createTRPCRouter({
         .update(stores)
         .set({
           name: input.name,
+          slug: input.slug,
         })
         .where(
           and(
@@ -88,7 +115,7 @@ const storeRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  updateStore: organizationProcedure
+  openCloseStore: organizationProcedure
     .input(
       z.object({
         storeId: z.number().int(),
@@ -121,6 +148,43 @@ const storeRouter = createTRPCRouter({
     const stores = await ctx.db.query.stores.findMany({
       columns: { organizationId: false },
       where: (store, { eq }) => eq(store.organizationId, ctx.organizationId),
+    });
+    return stores;
+  }),
+
+  getAllStoreWithMenu: organizationProcedure.query(async ({ ctx }) => {
+    const stores = await ctx.db.query.stores.findMany({
+      columns: { organizationId: false },
+      where: (store, { eq }) => eq(store.organizationId, ctx.organizationId),
+      with: {
+        storeMenus: {
+          columns: {
+            id: false,
+            storeSlug: false,
+            menuId: false,
+            createdAt: false,
+            updatedAt: false,
+          },
+          with: {
+            menu: {
+              columns: {
+                id: false,
+                menuGroupId: false,
+                menuDetailsId: false,
+                createdAt: false,
+                updatedAt: false,
+              },
+              with: {
+                menuDetails: {
+                  columns: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     return stores;
   }),

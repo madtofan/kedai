@@ -10,6 +10,7 @@ import {
   varchar,
   pgTable,
   text,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // Auth tables
@@ -281,7 +282,7 @@ export const stores = createTable(
     id: serial("id").primaryKey(),
     name: varchar("name", { length: 256 }).notNull(),
     isOpen: boolean("is_open").default(false),
-    slug: varchar("slug", { length: 256 }).notNull().unique(),
+    slug: varchar("slug", { length: 256 }).notNull(),
     organizationId: text("organization_id")
       .references(() => organization.id, { onDelete: "cascade" })
       .notNull(),
@@ -296,6 +297,7 @@ export const stores = createTable(
     organizationIndex: index("store_organization_idx").on(
       example.organizationId,
     ),
+    slugIndex: unique().on(example.organizationId, example.slug),
   }),
 );
 export const storesRelations = relations(stores, ({ one, many }) => ({
@@ -368,9 +370,7 @@ export const storeMenus = createTable(
       .references(() => stores.slug, { onDelete: "cascade" })
       .notNull(),
     menuId: integer("menu_id")
-      .references(() => menus.id, {
-        onDelete: "cascade",
-      })
+      .references(() => menus.id, { onDelete: "cascade" })
       .notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)

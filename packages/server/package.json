@@ -16,8 +16,8 @@
     "@aws-sdk/client-s3": "^3.688.0",
     "@aws-sdk/s3-request-presigner": "^3.688.0",
     "@t3-oss/env-nextjs": "^0.10.1",
-    "@trpc/client": "11.0.0-rc.566",
-    "@trpc/server": "11.0.0-rc.566",
+    "@trpc/client": "11.0.0-rc.637",
+    "@trpc/server": "11.0.0-rc.637",
     "better-auth": "0.8.1-beta.2",
     "drizzle-orm": "^0.35.3",
     "nanoid": "^5.0.8",
@@ -28,12 +28,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@types/slug": "^5.0.9",
     "drizzle-kit": "^0.26.2",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.16",
-    "eslint-plugin-drizzle": "^0.2.3",
+    "eslint-config-next": "^14.2.4",
     "typescript": "^5.6.3"
   },
-  "packageManager": "pnpm@9.11.0"
+  "ct3aMetadata": {
+    "initVersion": "7.37.0"
+  }
 }
